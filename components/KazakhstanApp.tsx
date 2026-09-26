@@ -12,7 +12,7 @@ import {
   Users, Check, RefreshCw, Calculator, Coffee,
   Printer, Wind, Thermometer, Droplets, Map, Timer,
   ChevronDown, ChevronUp, Zap, MoreHorizontal, X,
-  Edit3, Plus, RotateCcw,
+  Edit3, Plus, RotateCcw, GripVertical, ArrowUp, ArrowDown,
 } from 'lucide-react';
 
 const MapTab = dynamic(() => import('./MapTab'), { ssr: false });
@@ -265,6 +265,8 @@ export default function KazakhstanApp() {
   const [showEmergency,     setShowEmergency]     = useState(false);
   const dayScrollRef = useRef<HTMLDivElement>(null);
   const [isDayEditOpen,     setIsDayEditOpen]     = useState(false);
+  const [draggedIdx,        setDraggedIdx]        = useState<number | null>(null);
+  const [dragOverIdx,       setDragOverIdx]       = useState<number | null>(null);
 
   // ── Edit Modal State ─────────────────────────────────────────────────────────
   const [editModal, setEditModal] = useState<{
@@ -423,6 +425,26 @@ export default function KazakhstanApp() {
     updated[dayIdx] = { ...updated[dayIdx], ...updatedFields };
     persistItinerary(updated);
     setIsDayEditOpen(false);
+  };
+
+  // Move / shuffle activity within the current day
+  const handleMoveActivity = (dayNum: number, fromIdx: number, toIdx: number) => {
+    if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0) return;
+    const dayIdx = itinerary.findIndex(d => d.day === dayNum);
+    if (dayIdx === -1) return;
+
+    const updated = [...itinerary];
+    const currentDay = { ...updated[dayIdx] };
+    const activities = [...currentDay.activities];
+
+    if (fromIdx >= activities.length || toIdx >= activities.length) return;
+
+    const [moved] = activities.splice(fromIdx, 1);
+    activities.splice(toIdx, 0, moved);
+
+    currentDay.activities = activities;
+    updated[dayIdx] = currentDay;
+    persistItinerary(updated);
   };
 
   // Sync dark class on HTML root
@@ -834,8 +856,25 @@ export default function KazakhstanApp() {
                 return (
                   <div
                     key={idx}
-                    className={`rounded-[28px] transition-all duration-300 ${
-                      isNow
+                    data-act-idx={idx}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      if (dragOverIdx !== idx) setDragOverIdx(idx);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (draggedIdx !== null && draggedIdx !== idx) {
+                        handleMoveActivity(currentDayData.day, draggedIdx, idx);
+                      }
+                      setDraggedIdx(null);
+                      setDragOverIdx(null);
+                    }}
+                    className={`rounded-[28px] transition-all duration-300 relative ${
+                      draggedIdx === idx
+                        ? 'opacity-40 scale-[0.98] ring-2 ring-[var(--neu-accent)] ring-dashed z-20'
+                        : dragOverIdx === idx
+                        ? 'border-t-4 border-[var(--neu-teal)] ring-2 ring-[var(--neu-teal)]/30'
+                        : isNow
                         ? 'neu-inset-deep ring-2 ring-[var(--neu-teal)] p-1'
                         : isExpanded
                         ? 'neu-flat p-1'
@@ -886,8 +925,48 @@ export default function KazakhstanApp() {
                           </div>
                         </div>
 
-                        {/* Edit Button & Chevron Controls */}
-                        <div className="flex items-center gap-2 shrink-0">
+                        {/* Drag Handle, Edit Button & Chevron Controls */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {/* Press & Hold to Drag / Shuffle Handle */}
+                          <button
+                            type="button"
+                            draggable
+                            onDragStart={(e) => {
+                              setDraggedIdx(idx);
+                              e.dataTransfer.effectAllowed = 'move';
+                            }}
+                            onDragEnd={() => {
+                              setDraggedIdx(null);
+                              setDragOverIdx(null);
+                            }}
+                            onTouchStart={() => {
+                              setDraggedIdx(idx);
+                            }}
+                            onTouchMove={(e) => {
+                              const touch = e.touches[0];
+                              const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                              const cardEl = target?.closest('[data-act-idx]');
+                              if (cardEl) {
+                                const targetIdx = Number(cardEl.getAttribute('data-act-idx'));
+                                if (!isNaN(targetIdx) && targetIdx !== dragOverIdx) {
+                                  setDragOverIdx(targetIdx);
+                                }
+                              }
+                            }}
+                            onTouchEnd={() => {
+                              if (draggedIdx !== null && dragOverIdx !== null && draggedIdx !== dragOverIdx) {
+                                handleMoveActivity(currentDayData.day, draggedIdx, dragOverIdx);
+                              }
+                              setDraggedIdx(null);
+                              setDragOverIdx(null);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="touch-none cursor-grab active:cursor-grabbing neu-btn p-2 rounded-xl text-neu-muted hover:text-[var(--neu-accent)] active:neu-inset transition-all flex items-center justify-center active:scale-110"
+                            title="Press & hold to drag & shuffle"
+                          >
+                            <GripVertical className="w-3.5 h-3.5" />
+                          </button>
+
                           <button
                             type="button"
                             onClick={(e) => {
@@ -941,14 +1020,43 @@ export default function KazakhstanApp() {
                             </div>
                           )}
 
-                          <div className="flex items-center justify-between pt-2 border-t border-neu-muted/20">
-                            <button
-                              type="button"
-                              onClick={() => openEditModal(currentDayData.day, act, idx)}
-                              className="text-xs text-[var(--neu-accent)] font-bold flex items-center gap-1 hover:underline"
-                            >
-                              <Edit3 className="w-3 h-3" /> Edit Activity Details
-                            </button>
+                          <div className="flex items-center justify-between pt-2 border-t border-neu-muted/20 flex-wrap gap-2">
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => openEditModal(currentDayData.day, act, idx)}
+                                className="text-xs text-[var(--neu-accent)] font-bold flex items-center gap-1 hover:underline"
+                              >
+                                <Edit3 className="w-3 h-3" /> Edit Activity Details
+                              </button>
+
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  disabled={idx === 0}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMoveActivity(currentDayData.day, idx, idx - 1);
+                                  }}
+                                  className="neu-btn px-2 py-1 rounded-lg text-[11px] font-bold text-neu-muted hover:text-[var(--neu-accent)] disabled:opacity-30 disabled:pointer-events-none active:neu-inset transition-all flex items-center gap-0.5"
+                                  title="Move Up"
+                                >
+                                  <ArrowUp className="w-3 h-3" /> Up
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={idx === filteredActivities.length - 1}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMoveActivity(currentDayData.day, idx, idx + 1);
+                                  }}
+                                  className="neu-btn px-2 py-1 rounded-lg text-[11px] font-bold text-neu-muted hover:text-[var(--neu-accent)] disabled:opacity-30 disabled:pointer-events-none active:neu-inset transition-all flex items-center gap-0.5"
+                                  title="Move Down"
+                                >
+                                  <ArrowDown className="w-3 h-3" /> Down
+                                </button>
+                              </div>
+                            </div>
 
                             {act.kztExpense > 0 && (
                               <div className="text-xs font-mono">
