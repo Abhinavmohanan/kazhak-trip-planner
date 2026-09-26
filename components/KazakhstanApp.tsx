@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import {
   Calendar, MapPin, Compass, Car, Luggage, DollarSign, BookOpen,
   CheckSquare, Volume2, ShieldAlert, PhoneCall,
   Sun, Moon, AlertTriangle, Navigation, Clock,
   Users, Check, RefreshCw, Calculator, Coffee,
   Printer, Wind, Thermometer, Droplets, Map, Timer,
-  ChevronDown, ChevronUp, Menu, X, Zap, MoreHorizontal,
+  ChevronDown, ChevronUp, Zap, MoreHorizontal, X,
 } from 'lucide-react';
 
 const MapTab = dynamic(() => import('./MapTab'), { ssr: false });
@@ -23,6 +24,7 @@ interface Activity {
   kztExpense: number;
   category: 'sightseeing' | 'food' | 'transit' | 'hotel';
 }
+
 interface DayData {
   day: number;
   date: string;
@@ -31,6 +33,7 @@ interface DayData {
   location: string;
   activities: Activity[];
 }
+
 interface WeatherData {
   location: string;
   temp: number;
@@ -42,6 +45,7 @@ interface WeatherData {
   loading: boolean;
   error?: string;
 }
+
 interface PackingItem {
   id: number;
   text: string;
@@ -49,7 +53,7 @@ interface PackingItem {
   category: string;
 }
 
-// ─── Itinerary Data ───────────────────────────────────────────────────────────
+// ─── Static Data ──────────────────────────────────────────────────────────────
 const ITINERARY_DATA: DayData[] = [
   {
     day: 1, date: 'Sun, Sep 11', title: 'Arrival & Almaty City Culture',
@@ -219,40 +223,64 @@ function nowMinutes() {
   return n.getHours() * 60 + n.getMinutes();
 }
 
+// ─── Static Packing Data ──────────────────────────────────────────────────────
+const PACKING_ITEMS_DATA: Omit<PackingItem, 'checked'>[] = [
+  { id: 1,  text: 'Original Passports (MANDATORY for Big Almaty Lake border check)', category: 'Docs'     },
+  { id: 2,  text: 'International Driving Permit (IDP) + License',                    category: 'Docs'     },
+  { id: 3,  text: 'Cash KZT (~150,000–200,000 KZT for Saty/Basshi)',                 category: 'Money'    },
+  { id: 4,  text: 'Powerbank (10,000–20,000 mAh)',                                   category: 'Tech'     },
+  { id: 5,  text: 'Thermal Layers & Windbreaker (Assy & Shymbulak 0°C)',             category: 'Clothing' },
+  { id: 6,  text: 'Soft Duffel Bags (1 per person — no hard suitcases)',             category: 'Luggage'  },
+  { id: 7,  text: 'Offline Maps: 2GIS & Yandex Maps downloaded',                     category: 'Tech'     },
+  { id: 8,  text: '2L Water bottle per person + Dry Snacks/Nuts',                    category: 'Food'     },
+  { id: 9,  text: 'Rubber slippers & small towel (Arasan Baths)',                    category: 'Personal' },
+  { id: 10, text: 'Sunscreen SPF50 & Sunglasses (Charyn & Dunes)',                   category: 'Personal' },
+  { id: 11, text: 'First Aid Kit + altitude sickness tablets',                        category: 'Health'   },
+  { id: 12, text: 'Travel Insurance documents (print + digital)',                     category: 'Docs'     },
+];
+const DEFAULT_CHECKED_IDS = [1, 2, 6];
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function KazakhstanApp() {
-  const [activeTab, setActiveTab] = useState('itinerary');
-  const [isDarkMode, setIsDarkMode] = useState(true);
-  const [selectedDay, setSelectedDay] = useState(1);
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [expandedActivity, setExpandedActivity] = useState<number | null>(null);
-  const [showEmergency, setShowEmergency] = useState(false);
-  const [kztAmount, setKztAmount] = useState(100000);
-  const [selectedCurrency, setSelectedCurrency] = useState('USD');
-  const [strategyType, setStrategyType] = useState('minivan');
-  const [phraseFilter, setPhraseFilter] = useState('all');
+  // ── Persisted per-user preferences (localStorage) ────────────────────────────
+  const [isDarkMode,       setIsDarkMode]       = useLocalStorage<boolean>('kz-dark-mode',      true);
+  const [activeTab,        setActiveTab]        = useLocalStorage<string>('kz-active-tab',       'itinerary');
+  const [categoryFilter,   setCategoryFilter]   = useLocalStorage<string>('kz-category-filter', 'all');
+  const [phraseFilter,     setPhraseFilter]     = useLocalStorage<string>('kz-phrase-filter',   'all');
+  const [selectedCurrency, setSelectedCurrency] = useLocalStorage<string>('kz-currency',        'USD');
+  const [strategyType,     setStrategyType]     = useLocalStorage<string>('kz-strategy',        'minivan');
+  const [kztAmount,        setKztAmount]        = useLocalStorage<number>('kz-kzt-amount',      100000);
+  const [checkedIds,       setCheckedIds]       = useLocalStorage<number[]>('kz-checklist',     DEFAULT_CHECKED_IDS);
+
+  // ── Ephemeral UI State ───────────────────────────────────────────────────────
+  const [selectedDay,       setSelectedDay]       = useState(1);
+  const [expandedActivity,  setExpandedActivity]  = useState<number | null>(null);
+  const [showEmergency,     setShowEmergency]     = useState(false);
   const dayScrollRef = useRef<HTMLDivElement>(null);
+
+  // Sync dark class on HTML root for global styling
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }, [isDarkMode]);
+
+  // Derive full packing items from static data + stored checked IDs
+  const packingItems: PackingItem[] = useMemo(() => PACKING_ITEMS_DATA.map(item => ({
+    ...item,
+    checked: checkedIds.includes(item.id),
+  })), [checkedIds]);
 
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, departed: false, tripOver: false });
   const [weatherData, setWeatherData] = useState<WeatherData[]>(
     WEATHER_LOCATIONS.map(l => ({ location: l.name, temp: 0, tempMin: 0, tempMax: 0, windSpeed: 0, humidity: 0, weatherCode: 0, loading: true }))
   );
-  const [packingItems, setPackingItems] = useState<PackingItem[]>([
-    { id: 1, text: 'Original Passports (MANDATORY for Big Almaty Lake border check)', checked: true, category: 'Docs' },
-    { id: 2, text: 'International Driving Permit (IDP) + License', checked: true, category: 'Docs' },
-    { id: 3, text: 'Cash KZT (~150,000–200,000 KZT for Saty/Basshi)', checked: false, category: 'Money' },
-    { id: 4, text: 'Powerbank (10,000–20,000 mAh)', checked: false, category: 'Tech' },
-    { id: 5, text: 'Thermal Layers & Windbreaker (Assy & Shymbulak 0°C)', checked: false, category: 'Clothing' },
-    { id: 6, text: 'Soft Duffel Bags (1 per person — no hard suitcases)', checked: true, category: 'Luggage' },
-    { id: 7, text: 'Offline Maps: 2GIS & Yandex Maps downloaded', checked: false, category: 'Tech' },
-    { id: 8, text: '2L Water bottle per person + Dry Snacks/Nuts', checked: false, category: 'Food' },
-    { id: 9, text: 'Rubber slippers & small towel (Arasan Baths)', checked: false, category: 'Personal' },
-    { id: 10, text: 'Sunscreen SPF50 & Sunglasses (Charyn & Dunes)', checked: false, category: 'Personal' },
-    { id: 11, text: 'First Aid Kit + altitude sickness tablets', checked: false, category: 'Health' },
-    { id: 12, text: 'Travel Insurance documents (print + digital)', checked: false, category: 'Docs' },
-  ]);
 
-  // ── Auto-detect trip day & current time ──────────────────────────────────────
+  // Auto-detect trip day
   useEffect(() => {
     const now = new Date();
     const isOnTrip = now >= DEPARTURE && now <= TRIP_END;
@@ -262,7 +290,7 @@ export default function KazakhstanApp() {
     }
   }, []);
 
-  // ── Countdown ────────────────────────────────────────────────────────────────
+  // Countdown timer
   useEffect(() => {
     const tick = () => {
       const now = new Date();
@@ -282,7 +310,7 @@ export default function KazakhstanApp() {
     return () => clearInterval(id);
   }, []);
 
-  // ── Weather ──────────────────────────────────────────────────────────────────
+  // Weather fetching
   const fetchWeather = useCallback(async () => {
     setWeatherData(prev => prev.map(w => ({ ...w, loading: true, error: undefined })));
     const results = await Promise.all(
@@ -297,15 +325,16 @@ export default function KazakhstanApp() {
     );
     setWeatherData(results);
   }, []);
+
   useEffect(() => { fetchWeather(); }, [fetchWeather]);
 
-  // ── Auto-scroll day selector to selected day ──────────────────────────────────
+  // Auto-scroll day selector
   useEffect(() => {
     const el = dayScrollRef.current?.querySelector(`[data-day="${selectedDay}"]`) as HTMLElement | null;
     el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }, [selectedDay]);
 
-  // ── Derived data ─────────────────────────────────────────────────────────────
+  // Derived calculations
   const currentDayData = ITINERARY_DATA.find(d => d.day === selectedDay)!;
   const totalTripKZT = useMemo(() => ITINERARY_DATA.reduce((acc, day) => acc + day.activities.reduce((a, act) => a + act.kztExpense, 0), 0), []);
   const maxDayKZT = useMemo(() => Math.max(...ITINERARY_DATA.map(day => day.activities.reduce((a, act) => a + act.kztExpense, 0))), []);
@@ -321,7 +350,6 @@ export default function KazakhstanApp() {
 
   const filteredActivities = currentDayData.activities.filter(act => categoryFilter === 'all' || act.category === categoryFilter);
 
-  // Current/next activity indices for "NOW" / "NEXT"
   const nowIdx = filteredActivities.findIndex(act => {
     const r = parseTimeRange(act.time);
     return r && nowMins >= r.start && nowMins <= r.end;
@@ -331,11 +359,6 @@ export default function KazakhstanApp() {
     return r && nowMins < r.start;
   });
 
-  const dm = isDarkMode;
-  const card = `${dm ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`;
-  const surface = `${dm ? 'bg-slate-800/60 border-slate-700' : 'bg-slate-50 border-slate-200'}`;
-
-  // ── Speech ───────────────────────────────────────────────────────────────────
   const speakText = (text: string) => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       const u = new SpeechSynthesisUtterance(text);
@@ -345,9 +368,13 @@ export default function KazakhstanApp() {
   };
 
   const handlePrint = () => { if (typeof window !== 'undefined') window.print(); };
-  const toggleChecklist = (id: number) => setPackingItems(items => items.map(item => item.id === id ? { ...item, checked: !item.checked } : item));
 
-  // ── Bottom nav tabs (mobile) ──────────────────────────────────────────────────
+  const toggleChecklist = (id: number) =>
+    setCheckedIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+
+  // Tabs navigation definitions
   const mobileNavTabs = [
     { id: 'itinerary', label: 'Today',   icon: Calendar  },
     { id: 'map',       label: 'Map',     icon: Map       },
@@ -356,7 +383,6 @@ export default function KazakhstanApp() {
     { id: 'more',      label: 'More',    icon: MoreHorizontal },
   ];
 
-  // ── Desktop tabs ─────────────────────────────────────────────────────────────
   const desktopTabs = [
     { id: 'itinerary',  label: 'Day-by-Day Plan',         icon: Calendar    },
     { id: 'weather',    label: 'Live Weather',             icon: Sun         },
@@ -368,13 +394,12 @@ export default function KazakhstanApp() {
     { id: 'checklist',  label: 'Packing Checklist',        icon: CheckSquare },
   ];
 
-  // ─────────────────────────────────────────────────────────────────────────────
   return (
-    <div className={`min-h-screen ${dm ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800'} transition-colors duration-200 font-sans`}>
+    <div className={`${isDarkMode ? 'dark' : ''} min-h-screen bg-neu-bg text-neu-text transition-colors duration-300 font-body selection:bg-[var(--neu-accent)] selection:text-white`}>
 
-      {/* ── PRINT LAYOUT ── */}
-      <div className="hidden print:block p-6">
-        <h1 className="text-2xl font-bold mb-1">Kazakhstan 8-Day Master Itinerary</h1>
+      {/* ── PRINT LAYOUT (Preserved) ── */}
+      <div className="hidden print:block p-8 bg-white text-black">
+        <h1 className="text-2xl font-display font-bold mb-1">Kazakhstan 8-Day Master Itinerary</h1>
         <p className="text-sm text-gray-500 mb-6">6 Travelers • Sep 11–18, 2026</p>
         {ITINERARY_DATA.map(day => (
           <div key={day.day} className="print-card mb-4">
@@ -384,96 +409,115 @@ export default function KazakhstanApp() {
               <div key={i} className="mb-2 pl-2 border-l-2 border-gray-300">
                 <p className="text-xs font-bold">{act.time} — {act.place} <span className="font-normal text-gray-500">({act.kztExpense.toLocaleString()} KZT)</span></p>
                 <p className="text-xs">{act.whatToDo}</p>
-                {act.lookOutFor && <p className="text-xs text-orange-700">⚠ {act.lookOutFor}</p>}
+                {act.lookOutFor && <p className="text-xs text-amber-700">⚠ {act.lookOutFor}</p>}
               </div>
             ))}
           </div>
         ))}
       </div>
 
-      {/* ══════════════ HEADER ══════════════ */}
-      <header className={`no-print sticky top-0 z-40 border-b backdrop-blur-md ${dm ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'}`}>
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2">
+      {/* ══════════════ NEUMORPHIC HEADER ══════════════ */}
+      <header className="no-print sticky top-0 z-40 bg-neu-bg/95 backdrop-blur-md neu-flat rounded-b-[28px] transition-all">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
 
-          {/* Logo + title */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="bg-emerald-500/20 p-1.5 rounded-xl border border-emerald-500/40 text-emerald-400 shrink-0">
+          {/* Logo & Title */}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="neu-inset-deep p-2.5 rounded-2xl text-[var(--neu-accent)] shrink-0 flex items-center justify-center">
               <Compass className="w-5 h-5 animate-pulse" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm sm:text-base font-bold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent truncate">
+              <h1 className="font-display font-extrabold text-base sm:text-lg tracking-tight bg-gradient-to-r from-[var(--neu-accent)] to-[var(--neu-teal)] bg-clip-text text-transparent truncate">
                 Kazakhstan Trip 🇰🇿
               </h1>
-              <p className="text-[10px] text-slate-400 hidden sm:flex items-center gap-1">
-                <Users className="w-3 h-3" /> 6 Travelers • Sep 11–18
+              <p className="text-[11px] text-neu-muted hidden sm:flex items-center gap-1.5 font-medium">
+                <Users className="w-3.5 h-3.5" /> 6 Travelers • Sep 11–18, 2026
               </p>
             </div>
           </div>
 
-          {/* Right side: countdown + controls */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            {/* Countdown pill */}
-            <div className={`px-2.5 py-1 rounded-lg border text-[11px] flex items-center gap-1.5 ${dm ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-100 border-slate-300'}`}>
-              <Timer className="w-3 h-3 text-emerald-400 shrink-0" />
+          {/* Right Header Controls */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Countdown Inset Pill */}
+            <div className="neu-inset-sm px-3.5 py-1.5 rounded-full flex items-center gap-2 text-xs font-mono font-bold">
+              <Timer className="w-3.5 h-3.5 text-[var(--neu-teal)] shrink-0" />
               {countdown.tripOver ? (
-                <span className="font-bold text-emerald-400">Trip done ✓</span>
+                <span className="text-[var(--neu-teal)]">Trip complete ✓</span>
               ) : countdown.departed ? (
-                <span className="font-bold text-emerald-400">✈️ Underway!</span>
+                <span className="text-[var(--neu-teal)]">✈️ Underway!</span>
               ) : (
-                <span className="font-mono font-bold text-emerald-400">
-                  {countdown.days}d {countdown.hours}h {countdown.minutes}m
+                <span className="text-[var(--neu-teal)]">
+                  {countdown.days}d {countdown.hours}h {countdown.minutes}m {countdown.seconds}s
                 </span>
               )}
             </div>
 
-            {/* Print (desktop only) */}
-            <button onClick={handlePrint} className={`hidden sm:flex p-2 rounded-lg border items-center gap-1 text-xs ${dm ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200'}`} title="Print">
+            {/* Print Button (Desktop) */}
+            <button
+              onClick={handlePrint}
+              className="hidden sm:flex neu-btn p-2.5 rounded-2xl text-neu-muted hover:text-neu-text transition-all"
+              title="Print Itinerary"
+            >
               <Printer className="w-4 h-4" />
             </button>
 
-            {/* Dark mode */}
-            <button onClick={() => setIsDarkMode(!dm)} className={`p-2 rounded-lg border ${dm ? 'bg-slate-800 border-slate-700 text-yellow-400 hover:bg-slate-700' : 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200'}`}>
-              {dm ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            {/* Dark / Light Mode Neumorphic Button */}
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="neu-btn p-2.5 rounded-2xl text-amber-500 hover:text-amber-400 transition-all flex items-center justify-center"
+              title="Toggle theme"
+            >
+              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
           </div>
         </div>
 
-        {/* Desktop tab bar (hidden on mobile) */}
-        <div className="hidden md:flex max-w-7xl mx-auto px-4 space-x-1 overflow-x-auto text-xs font-medium scrollbar-none border-t border-slate-800/50">
+        {/* Desktop Tab Bar */}
+        <div className="hidden md:flex max-w-7xl mx-auto px-6 py-2 gap-1.5 overflow-x-auto text-xs font-medium scrollbar-none">
           {desktopTabs.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-1.5 py-2.5 px-3 border-b-2 transition-all whitespace-nowrap ${isActive ? 'border-emerald-400 text-emerald-400 font-semibold bg-emerald-500/10' : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'}`}>
-                <Icon className="w-3.5 h-3.5" /><span>{tab.label}</span>
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 py-2 px-3.5 rounded-2xl transition-all whitespace-nowrap ${
+                  isActive
+                    ? 'neu-inset-deep text-[var(--neu-accent)] font-bold ring-1 ring-[var(--neu-accent)]/30'
+                    : 'neu-btn text-neu-muted hover:text-neu-text'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
               </button>
             );
           })}
         </div>
       </header>
 
-      {/* ══════════════ MAIN CONTENT ══════════════ */}
-      {/* Bottom nav clearance: pb-24 on mobile, pb-6 on desktop */}
-      <main className="no-print max-w-7xl mx-auto px-3 sm:px-4 pt-4 pb-28 md:pb-8">
+      {/* ══════════════ MAIN CONTENT AREA ══════════════ */}
+      <main className="no-print max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-28 md:pb-12 space-y-6">
 
-        {/* ══════════ ITINERARY ══════════ */}
+        {/* ══════════ ITINERARY TAB ══════════ */}
         {activeTab === 'itinerary' && (
-          <div className="space-y-4">
+          <div className="space-y-6">
 
-            {/* On-trip banner */}
+            {/* Live On-Trip Banner */}
             {isToday && (
-              <div className={`p-3 rounded-xl border flex items-center gap-2.5 ${dm ? 'bg-emerald-900/30 border-emerald-700/50' : 'bg-emerald-50 border-emerald-200'}`}>
-                <span className="text-xl shrink-0">📍</span>
+              <div className="neu-inset-deep p-4 rounded-[28px] flex items-center gap-3.5 border-l-4 border-[var(--neu-teal)]">
+                <span className="text-2xl shrink-0">🧭</span>
                 <div>
-                  <div className="text-xs font-bold text-emerald-400">YOU ARE ON THE TRIP RIGHT NOW</div>
-                  <div className="text-[11px] text-slate-400">Auto-selected today. Activities happening now are highlighted below.</div>
+                  <div className="text-xs font-display font-extrabold uppercase tracking-wider text-[var(--neu-teal)]">
+                    You are on the Kazakhstan journey right now!
+                  </div>
+                  <div className="text-xs text-neu-muted mt-0.5">
+                    Activities taking place today are automatically highlighted with real-time indicators below.
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Day selector — horizontal scroll */}
-            <div ref={dayScrollRef} className="flex gap-2 overflow-x-auto scrollbar-none pb-1 -mx-3 px-3">
+            {/* Horizontal Day Selector Bar */}
+            <div ref={dayScrollRef} className="flex gap-3 overflow-x-auto scrollbar-none py-2 px-1 -mx-2">
               {ITINERARY_DATA.map(day => {
                 const isSel = selectedDay === day.day;
                 const dayTotal = day.activities.reduce((s, a) => s + a.kztExpense, 0);
@@ -483,167 +527,213 @@ export default function KazakhstanApp() {
                   const todayOffset = Math.floor((new Date().getTime() - tripStartDate.getTime()) / 86400000) + 1;
                   return day.day === todayOffset;
                 })();
+
                 return (
-                  <button key={day.day} data-day={day.day} onClick={() => setSelectedDay(day.day)}
-                    className={`flex-shrink-0 p-2.5 rounded-xl border text-left transition-all w-[90px] sm:w-[100px] relative ${
+                  <button
+                    key={day.day}
+                    data-day={day.day}
+                    onClick={() => setSelectedDay(day.day)}
+                    className={`flex-shrink-0 p-3.5 rounded-[24px] text-left transition-all w-[100px] sm:w-[110px] relative ${
                       isSel
-                        ? 'bg-gradient-to-br from-emerald-600 to-teal-700 text-white border-emerald-400 ring-2 ring-emerald-400/40 shadow-lg shadow-emerald-900/30'
-                        : `${dm ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-700'}`
-                    }`}>
-                    {isThisToday && <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-950 now-pulse" />}
-                    <div className="text-[9px] uppercase font-bold tracking-wider opacity-75">{day.date}</div>
-                    <div className="text-sm font-extrabold mt-0.5">Day {day.day}</div>
-                    <div className="text-[10px] truncate mt-0.5 opacity-80 leading-tight">{day.title.split(' ').slice(0, 3).join(' ')}</div>
-                    <div className="mt-1.5 h-1 rounded-full bg-white/20 overflow-hidden">
-                      <div className={`h-1 rounded-full ${isSel ? 'bg-white' : 'bg-emerald-500'}`} style={{ width: `${pct}%` }} />
+                        ? 'neu-inset-deep ring-2 ring-[var(--neu-accent)] ring-offset-2 ring-offset-neu-bg text-neu-text'
+                        : 'neu-btn text-neu-muted hover:text-neu-text'
+                    }`}
+                  >
+                    {isThisToday && (
+                      <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-[var(--neu-teal)] now-pulse" />
+                    )}
+                    <div className="text-[10px] uppercase font-bold tracking-wider opacity-75">{day.date}</div>
+                    <div className="text-base font-display font-extrabold mt-0.5">Day {day.day}</div>
+                    <div className="text-[11px] truncate mt-0.5 opacity-85 leading-tight">{day.title.split(' ').slice(0, 3).join(' ')}</div>
+                    
+                    {/* Micro budget bar */}
+                    <div className="mt-2.5 h-1.5 rounded-full neu-inset-sm overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-[var(--neu-teal)] to-[var(--neu-accent)]"
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
                   </button>
                 );
               })}
             </div>
 
-            {/* Day header card */}
-            <div className={`p-4 rounded-2xl border ${card}`}>
-              <div className="flex items-start justify-between gap-2">
+            {/* Day Header Hero Card */}
+            <div className="rounded-[32px] neu-flat p-6 sm:p-8 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <div className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+                  <div className="neu-inset-sm inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-display font-bold uppercase tracking-wider text-[var(--neu-accent)]">
                     Day {currentDayData.day} • {currentDayData.date}
                   </div>
-                  <h2 className="text-lg sm:text-xl font-bold mt-0.5 leading-tight">{currentDayData.title}</h2>
-                  <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-emerald-400 shrink-0" /> {currentDayData.location}
-                  </p>
-                  <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
-                    <Luggage className="w-3 h-3 text-amber-400 shrink-0" />
-                    <span className="text-amber-300 font-medium">{currentDayData.overnight}</span>
-                  </p>
+                  <h2 className="text-xl sm:text-2xl font-display font-extrabold mt-2 leading-tight">
+                    {currentDayData.title}
+                  </h2>
+                  <div className="flex flex-wrap items-center gap-4 text-xs text-neu-muted mt-2 font-medium">
+                    <span className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-[var(--neu-teal)]" /> {currentDayData.location}
+                    </span>
+                    <span className="flex items-center gap-1.5 text-amber-500 font-semibold">
+                      <Luggage className="w-3.5 h-3.5" /> {currentDayData.overnight}
+                    </span>
+                  </div>
                 </div>
-                {/* Day budget bubble */}
-                <div className={`shrink-0 text-center p-2.5 rounded-xl border ${dm ? 'bg-amber-500/10 border-amber-500/30' : 'bg-amber-50 border-amber-200'}`}>
-                  <div className="text-[9px] text-amber-400 font-bold uppercase">Day spend</div>
-                  <div className="text-sm font-extrabold text-amber-300 font-mono">{(currentDayTotal / 1000).toFixed(0)}K</div>
-                  <div className="text-[9px] text-slate-400">KZT/person</div>
+
+                {/* Day Spend Inset Metric */}
+                <div className="neu-inset-deep p-4 rounded-[24px] text-center sm:text-right shrink-0 min-w-[130px]">
+                  <div className="text-[10px] text-neu-muted uppercase font-bold tracking-wider">Day Spend</div>
+                  <div className="text-xl font-display font-extrabold text-[var(--neu-amber)] font-mono mt-0.5">
+                    {(currentDayTotal / 1000).toFixed(0)}K <span className="text-xs font-normal">KZT</span>
+                  </div>
+                  <div className="text-[10px] text-neu-muted mt-0.5">~${Math.round(currentDayTotal * EXCHANGE_RATES.USD)} USD / person</div>
                 </div>
               </div>
 
-              {/* Budget bar */}
-              <div className="mt-3">
-                <div className={`h-2 rounded-full overflow-hidden ${dm ? 'bg-slate-800' : 'bg-slate-200'}`}>
-                  <div className={`h-2 rounded-full transition-all duration-700 ${budgetPercent >= 90 ? 'bg-rose-500' : budgetPercent >= 65 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${budgetPercent}%` }} />
+              {/* Day Budget Inset Track */}
+              <div className="pt-2">
+                <div className="flex justify-between text-xs font-medium text-neu-muted mb-1.5">
+                  <span>Relative Spend Intensity</span>
+                  <span className="font-mono font-bold text-neu-text">{budgetPercent}% of Peak Day</span>
+                </div>
+                <div className="h-3 rounded-full neu-inset-sm overflow-hidden p-0.5">
+                  <div
+                    className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-[var(--neu-teal)] via-[var(--neu-accent)] to-[var(--neu-amber)]"
+                    style={{ width: `${Math.min(budgetPercent, 100)}%` }}
+                  />
                 </div>
               </div>
 
-              {/* Category filter — pill style */}
-              <div className="flex gap-1.5 mt-3 overflow-x-auto scrollbar-none">
-                {['all', 'sightseeing', 'food', 'transit', 'hotel'].map(cat => (
-                  <button key={cat} onClick={() => setCategoryFilter(cat)}
-                    className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-medium transition-colors border ${
-                      categoryFilter === cat
-                        ? 'bg-emerald-500 border-emerald-500 text-slate-950 font-bold'
-                        : `${dm ? 'border-slate-700 text-slate-400 hover:border-slate-600' : 'border-slate-300 text-slate-500'}`
-                    }`}>
-                    {cat === 'all' ? 'All' : `${CATEGORY_EMOJI[cat]} ${cat.charAt(0).toUpperCase() + cat.slice(1)}`}
-                  </button>
-                ))}
+              {/* Category Filter Pills */}
+              <div className="flex gap-2 pt-2 overflow-x-auto scrollbar-none">
+                {['all', 'sightseeing', 'food', 'transit', 'hotel'].map(cat => {
+                  const isCat = categoryFilter === cat;
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => setCategoryFilter(cat)}
+                      className={`shrink-0 px-4 py-2 rounded-full text-xs font-medium transition-all ${
+                        isCat
+                          ? 'neu-inset-deep text-[var(--neu-accent)] font-bold ring-1 ring-[var(--neu-accent)]/40'
+                          : 'neu-btn text-neu-muted hover:text-neu-text'
+                      }`}
+                    >
+                      {cat === 'all' ? 'All Activities' : `${CATEGORY_EMOJI[cat]} ${cat.charAt(0).toUpperCase() + cat.slice(1)}`}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Activities — collapsible cards */}
-            <div className="space-y-2">
+            {/* Activities List (Accordion-style Neumorphic Cards) */}
+            <div className="space-y-3.5">
               {filteredActivities.map((act, idx) => {
                 const isNow = isToday && idx === nowIdx;
                 const isNext = isToday && idx === nextIdx && nowIdx !== -1;
                 const isExpanded = expandedActivity === idx;
-                const timeRange = parseTimeRange(act.time);
 
                 return (
-                  <div key={idx}
-                    className={`rounded-2xl border transition-all ${
+                  <div
+                    key={idx}
+                    className={`rounded-[28px] transition-all duration-300 ${
                       isNow
-                        ? `${dm ? 'bg-emerald-950/40 border-emerald-600/60' : 'bg-emerald-50 border-emerald-300'} now-pulse`
-                        : isNext
-                        ? `${dm ? 'bg-slate-800/80 border-slate-600' : 'bg-slate-50 border-slate-300'}`
-                        : `${card}`
-                    }`}>
-
-                    {/* ── Collapsed header (always visible) ── */}
+                        ? 'neu-inset-deep ring-2 ring-[var(--neu-teal)] p-1'
+                        : isExpanded
+                        ? 'neu-flat p-1'
+                        : 'neu-flat hover:neu-flat-hover'
+                    }`}
+                  >
                     <button
-                      className="w-full p-3.5 text-left"
-                      onClick={() => setExpandedActivity(isExpanded ? null : idx)}>
-                      <div className="flex items-start gap-2.5">
-                        {/* Time column */}
-                        <div className="shrink-0 text-center min-w-[58px]">
-                          <div className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md ${dm ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>
+                      className="w-full p-4 sm:p-5 text-left focus:outline-none"
+                      onClick={() => setExpandedActivity(isExpanded ? null : idx)}
+                    >
+                      <div className="flex items-start gap-3.5">
+                        
+                        {/* Time Inset Socket */}
+                        <div className="shrink-0 text-center min-w-[68px]">
+                          <div className="neu-inset-sm px-2 py-1 rounded-xl font-mono text-xs font-bold text-[var(--neu-accent)]">
                             {act.time.split(' - ')[0]}
                           </div>
                           {act.time.split(' - ')[1] && (
-                            <div className="text-[9px] text-slate-500 mt-0.5">{act.time.split(' - ')[1]}</div>
+                            <div className="text-[10px] text-neu-muted mt-1 font-mono">{act.time.split(' - ')[1]}</div>
                           )}
                         </div>
 
-                        {/* Place + tags */}
+                        {/* Title & Category Tags */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
+                          <div className="flex items-center gap-2 flex-wrap">
                             {isNow && (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500 text-slate-950 text-[9px] font-extrabold uppercase tracking-wide shrink-0">
-                                <Zap className="w-2.5 h-2.5" /> NOW
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[var(--neu-teal)] text-slate-900 text-[10px] font-extrabold uppercase tracking-wide now-pulse">
+                                <Zap className="w-3 h-3" /> NOW
                               </span>
                             )}
                             {isNext && !isNow && (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[9px] font-bold uppercase tracking-wide shrink-0">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full neu-inset-sm text-[var(--neu-amber)] text-[10px] font-bold uppercase tracking-wide">
                                 NEXT
                               </span>
                             )}
-                            <span className="font-bold text-sm leading-tight truncate">{act.place}</span>
+                            <span className="font-display font-bold text-base sm:text-lg leading-tight truncate">
+                              {act.place}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] text-slate-400">{CATEGORY_EMOJI[act.category]} {act.category}</span>
+
+                          <div className="flex items-center gap-3 mt-1.5 text-xs text-neu-muted font-medium">
+                            <span>{CATEGORY_EMOJI[act.category]} {act.category}</span>
                             {act.kztExpense > 0 && (
-                              <span className="text-[10px] font-mono text-amber-400 font-bold">~{act.kztExpense >= 1000 ? `${(act.kztExpense/1000).toFixed(0)}K` : act.kztExpense} KZT</span>
+                              <span className="font-mono text-[var(--neu-amber)] font-bold">
+                                ~{act.kztExpense >= 1000 ? `${(act.kztExpense/1000).toFixed(0)}K` : act.kztExpense} KZT
+                              </span>
                             )}
                           </div>
                         </div>
 
-                        {/* Expand chevron */}
-                        <div className={`shrink-0 mt-0.5 ${dm ? 'text-slate-500' : 'text-slate-400'}`}>
+                        {/* Expand Chevron Icon Socket */}
+                        <div className="shrink-0 neu-inset-sm p-1.5 rounded-xl text-neu-muted">
                           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </div>
                       </div>
 
-                      {/* Quick "what to do" preview (always visible) */}
+                      {/* Collapsed Preview */}
                       {!isExpanded && (
-                        <p className="text-[11px] text-slate-400 mt-2 ml-[70px] leading-relaxed line-clamp-2">{act.whatToDo}</p>
+                        <p className="text-xs text-neu-muted mt-2.5 ml-[82px] leading-relaxed line-clamp-2">
+                          {act.whatToDo}
+                        </p>
                       )}
                     </button>
 
-                    {/* ── Expanded detail ── */}
+                    {/* Expanded Detail Panel */}
                     {isExpanded && (
-                      <div className="px-3.5 pb-3.5 space-y-3 border-t border-slate-800/40 pt-3">
-                        <div>
-                          <div className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 mb-1 ${dm ? 'text-cyan-400' : 'text-cyan-600'}`}>
-                            <Compass className="w-3 h-3" /> What to Do
+                      <div className="px-5 pb-5 pt-2">
+                        <div className="neu-inset rounded-[24px] p-5 space-y-3.5">
+                          <div>
+                            <div className="text-[11px] font-display font-bold uppercase tracking-wider text-[var(--neu-accent)] flex items-center gap-1.5 mb-1">
+                              <Compass className="w-3.5 h-3.5" /> What to Do
+                            </div>
+                            <p className="text-xs sm:text-sm leading-relaxed text-neu-text">{act.whatToDo}</p>
                           </div>
-                          <p className="text-xs leading-relaxed text-slate-200">{act.whatToDo}</p>
+
+                          <div>
+                            <div className="text-[11px] font-display font-bold uppercase tracking-wider text-[var(--neu-teal)] flex items-center gap-1.5 mb-1">
+                              <Coffee className="w-3.5 h-3.5" /> Must Try
+                            </div>
+                            <p className="text-xs sm:text-sm leading-relaxed text-neu-text">{act.mustTry}</p>
+                          </div>
+
+                          {act.lookOutFor && (
+                            <div className="neu-inset-sm p-3.5 rounded-2xl border-l-3 border-[var(--neu-amber)]">
+                              <div className="text-[11px] font-display font-bold uppercase tracking-wider text-[var(--neu-amber)] flex items-center gap-1.5 mb-1">
+                                <ShieldAlert className="w-3.5 h-3.5" /> Look Out For
+                              </div>
+                              <p className="text-xs leading-relaxed text-neu-muted">{act.lookOutFor}</p>
+                            </div>
+                          )}
+
+                          {act.kztExpense > 0 && (
+                            <div className="text-xs font-mono text-right pt-2 border-t border-neu-muted/20">
+                              <span className="text-neu-muted">Estimated cost: </span>
+                              <span className="text-[var(--neu-amber)] font-bold">{act.kztExpense.toLocaleString()} KZT</span>
+                              <span className="text-neu-muted"> (${Math.round(act.kztExpense * EXCHANGE_RATES.USD)} USD)</span>
+                            </div>
+                          )}
                         </div>
-                        <div>
-                          <div className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 mb-1 text-emerald-400">
-                            <Coffee className="w-3 h-3" /> Must Try
-                          </div>
-                          <p className="text-xs leading-relaxed text-slate-200">{act.mustTry}</p>
-                        </div>
-                        <div className={`p-2.5 rounded-xl border ${dm ? 'bg-amber-500/10 border-amber-500/20' : 'bg-amber-50 border-amber-200'}`}>
-                          <div className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 mb-1 text-amber-400">
-                            <ShieldAlert className="w-3 h-3" /> Look Out For
-                          </div>
-                          <p className="text-xs leading-relaxed text-amber-200/90">{act.lookOutFor}</p>
-                        </div>
-                        {act.kztExpense > 0 && (
-                          <div className="text-[11px] text-right font-mono">
-                            <span className="text-slate-400">Est. cost: </span>
-                            <span className="text-amber-400 font-bold">{act.kztExpense.toLocaleString()} KZT</span>
-                            <span className="text-slate-500"> (${Math.round(act.kztExpense * EXCHANGE_RATES.USD)} USD)</span>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -653,59 +743,69 @@ export default function KazakhstanApp() {
           </div>
         )}
 
-        {/* ══════════ LIVE WEATHER ══════════ */}
+        {/* ══════════ LIVE WEATHER TAB ══════════ */}
         {activeTab === 'weather' && (
-          <div className="space-y-4">
-            <div className={`p-4 rounded-2xl border ${card}`}>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-base font-bold flex items-center gap-2 text-cyan-400">
-                  <Sun className="w-5 h-5" /> Live Weather
-                </h2>
-                <button onClick={fetchWeather} className="flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 active:bg-cyan-500/30">
+          <div className="space-y-6">
+            <div className="rounded-[32px] neu-flat p-6 sm:p-8 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg sm:text-xl font-display font-extrabold flex items-center gap-2 text-[var(--neu-accent)]">
+                    <Sun className="w-5 h-5" /> Live Weather Conditions
+                  </h2>
+                  <p className="text-xs text-neu-muted mt-1">Real-time Open-Meteo forecast API (free, no API key required)</p>
+                </div>
+                <button
+                  onClick={fetchWeather}
+                  className="neu-btn px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-bold text-[var(--neu-accent)] active:neu-inset"
+                >
                   <RefreshCw className="w-3.5 h-3.5" /> Refresh
                 </button>
               </div>
-              <p className="text-[11px] text-slate-400 mb-4">Open-Meteo API • Free • No API key</p>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* 2x2 Weather Tiles */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 {weatherData.map((w, i) => {
                   const wInfo = weatherCodeInfo(w.weatherCode);
                   const locInfo = WEATHER_LOCATIONS[i];
                   return (
-                    <div key={w.location} className={`p-3.5 rounded-2xl border ${surface}`}>
-                      <div className="text-[9px] uppercase font-bold tracking-wider text-cyan-400 mb-0.5">{locInfo.desc}</div>
-                      <div className="font-bold text-sm">{w.location}</div>
+                    <div key={w.location} className="rounded-[28px] neu-flat p-5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-[10px] uppercase font-bold tracking-wider text-[var(--neu-teal)]">{locInfo.desc}</div>
+                          <div className="font-display font-extrabold text-base sm:text-lg">{w.location}</div>
+                        </div>
+                        <span className="text-3xl">{wInfo.emoji}</span>
+                      </div>
+
                       {w.loading ? (
-                        <div className="mt-2 space-y-1.5 animate-pulse">
-                          <div className="h-6 w-14 bg-slate-700 rounded" />
-                          <div className="h-3 w-20 bg-slate-700 rounded" />
+                        <div className="animate-pulse space-y-2 py-4">
+                          <div className="h-8 neu-inset-sm rounded-xl w-24" />
+                          <div className="h-4 neu-inset-sm rounded-xl w-32" />
                         </div>
                       ) : w.error ? (
-                        <p className="mt-1 text-[10px] text-rose-400">{w.error}</p>
+                        <p className="text-xs text-[var(--neu-rose)] py-2">{w.error}</p>
                       ) : (
                         <>
-                          <div className="flex items-center gap-1.5 mt-2">
-                            <span className="text-2xl">{wInfo.emoji}</span>
-                            <div>
-                              <div className="text-xl font-extrabold leading-none">{w.temp}°C</div>
-                              <div className="text-[10px] text-slate-400">{wInfo.label}</div>
-                            </div>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-display font-extrabold">{w.temp}°C</span>
+                            <span className="text-xs font-medium text-neu-muted">{wInfo.label}</span>
                           </div>
-                          <div className="mt-2 grid grid-cols-3 gap-1 text-[10px]">
-                            <div className="flex flex-col items-center">
-                              <Thermometer className="w-3 h-3 text-orange-400 mb-0.5" />
-                              <span className="font-bold">{w.tempMax}°</span>
-                              <span className="text-slate-500">{w.tempMin}°</span>
+
+                          <div className="grid grid-cols-3 gap-2 pt-1 text-center font-mono">
+                            <div className="neu-inset-sm p-2.5 rounded-2xl">
+                              <Thermometer className="w-3.5 h-3.5 mx-auto text-amber-500 mb-1" />
+                              <div className="text-xs font-bold">{w.tempMax}° / {w.tempMin}°</div>
+                              <div className="text-[9px] text-neu-muted">Range</div>
                             </div>
-                            <div className="flex flex-col items-center">
-                              <Wind className="w-3 h-3 text-blue-400 mb-0.5" />
-                              <span className="font-bold">{w.windSpeed}</span>
-                              <span className="text-slate-500">km/h</span>
+                            <div className="neu-inset-sm p-2.5 rounded-2xl">
+                              <Wind className="w-3.5 h-3.5 mx-auto text-cyan-500 mb-1" />
+                              <div className="text-xs font-bold">{w.windSpeed} km/h</div>
+                              <div className="text-[9px] text-neu-muted">Wind</div>
                             </div>
-                            <div className="flex flex-col items-center">
-                              <Droplets className="w-3 h-3 text-cyan-400 mb-0.5" />
-                              <span className="font-bold">{w.humidity}%</span>
-                              <span className="text-slate-500">hum.</span>
+                            <div className="neu-inset-sm p-2.5 rounded-2xl">
+                              <Droplets className="w-3.5 h-3.5 mx-auto text-[var(--neu-teal)] mb-1" />
+                              <div className="text-xs font-bold">{w.humidity}%</div>
+                              <div className="text-[9px] text-neu-muted">Humidity</div>
                             </div>
                           </div>
                         </>
@@ -716,354 +816,407 @@ export default function KazakhstanApp() {
               </div>
             </div>
 
-            {/* September tips */}
-            <div className={`p-4 rounded-2xl border ${dm ? 'bg-amber-500/10 border-amber-500/30' : 'bg-amber-50 border-amber-200'}`}>
-              <p className="font-semibold text-amber-400 flex items-center gap-1.5 mb-2 text-sm">
-                <AlertTriangle className="w-4 h-4" /> September Weather Guide
-              </p>
-              <div className="space-y-2 text-xs text-slate-300">
-                {[
-                  { place: 'Almaty city', tip: '18–25°C days, 10–14°C evenings. Light jacket after 7pm.' },
-                  { place: 'Shymbulak 3200m', tip: '0–8°C even in September. Thermal layer mandatory.' },
-                  { place: 'Charyn Canyon', tip: 'Up to 30°C midday. Start early, carry 2L water each.' },
-                  { place: 'Saty/Kolsai', tip: '10–18°C days, sub-5°C nights. Windbreaker essential.' },
-                  { place: 'Altyn Emel dunes', tip: '20–28°C. Dusty winds common in afternoon.' },
-                ].map(({ place, tip }) => (
-                  <div key={place} className={`p-2 rounded-lg ${dm ? 'bg-slate-800/50' : 'bg-white'} border ${dm ? 'border-slate-700' : 'border-amber-100'}`}>
-                    <span className="font-bold text-amber-300">{place}:</span>{' '}
-                    <span>{tip}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ══════════ MAP ══════════ */}
-        {activeTab === 'map' && (
-          <div className={`rounded-2xl border overflow-hidden ${card}`}>
-            <div className="p-4 border-b border-slate-800">
-              <h2 className="text-base font-bold flex items-center gap-2 text-emerald-400">
-                <Map className="w-5 h-5" /> Interactive Trip Map
-              </h2>
-              <p className="text-[11px] text-slate-400 mt-0.5">Tap markers for details. Dashed line = road trip route.</p>
-            </div>
-            <MapTab isDarkMode={dm} />
-          </div>
-        )}
-
-        {/* ══════════ PHRASEBOOK ══════════ */}
-        {activeTab === 'phrases' && (
-          <div className="space-y-3">
-            <div className={`p-4 rounded-2xl border ${card}`}>
-              <h2 className="text-base font-bold flex items-center gap-2 text-emerald-400 mb-1">
-                <BookOpen className="w-5 h-5" /> Russian Phrasebook
-              </h2>
-              <p className="text-[11px] text-slate-400 mb-3">Tap 🔊 to hear pronunciation aloud</p>
-
-              {/* Category filter */}
-              <div className="flex gap-2 overflow-x-auto scrollbar-none mb-4">
-                {['all', 'Greetings', 'Taxi', 'Shopping', 'Emergency'].map(cat => (
-                  <button key={cat} onClick={() => setPhraseFilter(cat)}
-                    className={`shrink-0 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-colors ${
-                      phraseFilter === cat
-                        ? 'bg-emerald-500 border-emerald-500 text-slate-950 font-bold'
-                        : `${dm ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-500'}`
-                    }`}>
-                    {cat === 'Emergency' ? '🚨 ' + cat : cat}
-                  </button>
-                ))}
-              </div>
-
-              <div className="space-y-2">
-                {PHRASES.filter(p => phraseFilter === 'all' || p.cat === phraseFilter).map((p, idx) => (
-                  <div key={idx} className={`p-3.5 rounded-xl border flex items-center gap-3 ${surface}`}>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[9px] text-emerald-400 font-bold uppercase tracking-wider">{p.cat}</div>
-                      <div className="text-sm font-bold mt-0.5 leading-tight">{p.mean}</div>
-                      <div className="text-xs text-cyan-300 mt-0.5 font-medium">{p.ru}</div>
-                      <div className="text-[10px] text-slate-400 italic mt-0.5">&quot;{p.trans}&quot;</div>
-                    </div>
-                    <button onClick={() => speakText(p.ru)}
-                      className="shrink-0 p-3 rounded-xl bg-emerald-500/10 text-emerald-400 active:bg-emerald-500 active:text-slate-950 border border-emerald-500/30 transition-colors">
-                      <Volume2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ══════════ MORE (mobile hub) ══════════ */}
-        {activeTab === 'more' && (
-          <div className="space-y-4">
-            {/* Section grid */}
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { id: 'currency',   label: 'Currency & Budget',   icon: DollarSign,  color: 'emerald', desc: 'KZT converter + 8-day budget' },
-                { id: 'transport',  label: 'Car & Luggage',        icon: Car,         color: 'cyan',    desc: 'Vehicle options + cost calc' },
-                { id: 'navigation', label: 'Routes & Times',       icon: Navigation,  color: 'amber',   desc: 'Distance matrix for all legs' },
-                { id: 'checklist',  label: 'Packing Checklist',    icon: CheckSquare, color: 'violet',  desc: `${packingItems.filter(i => i.checked).length}/${packingItems.length} items packed` },
-                { id: 'weather',    label: 'Live Weather',         icon: Sun,         color: 'sky',     desc: 'Real-time for all 4 stops' },
-                { id: 'map',        label: 'Interactive Map',      icon: Map,         color: 'teal',    desc: '11 markers + route line' },
-              ].map(sec => {
-                const Icon = sec.icon;
-                return (
-                  <button key={sec.id} onClick={() => setActiveTab(sec.id)}
-                    className={`p-4 rounded-2xl border text-left transition-all active:scale-95 ${surface}`}>
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2.5 bg-${sec.color}-500/15 border border-${sec.color}-500/30`}>
-                      <Icon className={`w-5 h-5 text-${sec.color}-400`} />
-                    </div>
-                    <div className="font-bold text-sm leading-tight">{sec.label}</div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">{sec.desc}</div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Quick currency converter */}
-            <div className={`p-4 rounded-2xl border ${card}`}>
-              <h3 className="font-bold text-sm flex items-center gap-2 mb-3">
-                <DollarSign className="w-4 h-4 text-emerald-400" /> Quick KZT Converter
+            {/* September Climatology Advice */}
+            <div className="rounded-[32px] neu-flat p-6 sm:p-8 space-y-3">
+              <h3 className="font-display font-bold text-base text-[var(--neu-amber)] flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" /> September Climatology & Packing Tips
               </h3>
-              <div className="flex gap-2 items-center">
-                <div className="flex-1 relative">
-                  <input type="number" value={kztAmount} onChange={e => setKztAmount(Number(e.target.value))}
-                    className={`w-full p-3 rounded-xl border text-base font-mono font-bold ${dm ? 'bg-slate-950 border-slate-700 text-emerald-400' : 'bg-slate-50 border-slate-300 text-slate-800'}`} />
-                  <span className="absolute right-3 top-3.5 text-xs text-slate-500 font-bold">KZT</span>
-                </div>
-                <select value={selectedCurrency} onChange={e => setSelectedCurrency(e.target.value)}
-                  className={`p-3 rounded-xl border text-sm font-bold ${dm ? 'bg-slate-950 border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-300 text-slate-800'}`}>
-                  <option>USD</option><option>INR</option><option>EUR</option><option>GBP</option>
-                </select>
-              </div>
-              <div className={`mt-2 p-3 rounded-xl border text-center ${dm ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-emerald-50 border-emerald-200'}`}>
-                <div className="text-xl font-extrabold text-emerald-300 font-mono">
-                  {(kztAmount * EXCHANGE_RATES[selectedCurrency]).toLocaleString(undefined, { maximumFractionDigits: 2 })} {selectedCurrency}
-                </div>
-                <div className="text-[10px] text-slate-400 mt-0.5">1 {selectedCurrency} ≈ {Math.round(1 / EXCHANGE_RATES[selectedCurrency])} KZT</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
+                {[
+                  { place: 'Almaty City', tip: '18–25°C pleasant afternoons, 10–14°C evenings. Light jacket required after 19:00.' },
+                  { place: 'Shymbulak (3200m)', tip: '0–8°C even on bright days. Thermal inner layer and windbreaker are mandatory.' },
+                  { place: 'Charyn Canyon', tip: 'Up to 30°C in the gorge floor. Sunscreen SPF50, sunglasses, and minimum 2L water each.' },
+                  { place: 'Saty Village & Lakes', tip: '12–18°C daytime, drops sub-5°C at night. Mountain air is crisp and unpolluted.' },
+                  { place: 'Altyn Emel Steppe', tip: '22–28°C dry heat. Afternoon gusty winds whip sand on the Singing Dunes.' },
+                ].map(({ place, tip }) => (
+                  <div key={place} className="neu-inset-sm p-3.5 rounded-2xl">
+                    <span className="font-bold text-[var(--neu-accent)] block mb-1">{place}</span>
+                    <span className="text-neu-muted leading-relaxed">{tip}</span>
+                  </div>
+                ))}
               </div>
             </div>
-
-            {/* Print button */}
-            <button onClick={handlePrint}
-              className={`w-full p-3.5 rounded-2xl border flex items-center justify-center gap-2 text-sm font-medium transition-all ${surface} active:scale-95`}>
-              <Printer className="w-4 h-4 text-slate-400" /> Print Full Itinerary (All 8 Days)
-            </button>
           </div>
         )}
 
-        {/* ══════════ CURRENCY (full page, reached from desktop or More→) ══════════ */}
-        {activeTab === 'currency' && (
-          <div className="space-y-4">
-            <div className={`p-4 rounded-2xl border ${card}`}>
-              <h2 className="text-base font-bold flex items-center gap-2 text-emerald-400 mb-1">
-                <DollarSign className="w-5 h-5" /> Currency & Budget
+        {/* ══════════ INTERACTIVE MAP TAB ══════════ */}
+        {activeTab === 'map' && (
+          <div className="rounded-[32px] neu-flat p-4 sm:p-6 space-y-4">
+            <div className="px-2">
+              <h2 className="text-lg sm:text-xl font-display font-extrabold flex items-center gap-2 text-[var(--neu-accent)]">
+                <Map className="w-5 h-5" /> Interactive Road Trip Map
               </h2>
-              <p className="text-[10px] text-slate-500">Static rates (Sep 2026): 1 USD ≈ 475 KZT</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+              <p className="text-xs text-neu-muted mt-1">
+                OpenStreetMap with 11 custom pinned stops and dashed road trip route across Almaty, Charyn, Saty, and Altyn Emel.
+              </p>
+            </div>
+            <div className="neu-inset rounded-[28px] p-2">
+              <MapTab isDarkMode={isDarkMode} />
+            </div>
+          </div>
+        )}
+
+        {/* ══════════ TRANSPORT TAB ══════════ */}
+        {activeTab === 'transport' && (
+          <div className="space-y-6">
+            <div className="rounded-[32px] neu-flat p-6 sm:p-8 space-y-4">
+              <div>
+                <h2 className="text-lg sm:text-xl font-display font-extrabold flex items-center gap-2 text-[var(--neu-accent)]">
+                  <Car className="w-5 h-5" /> 6-Person Transport Strategy & Calculator
+                </h2>
+                <p className="text-xs text-neu-muted mt-1">Compare vehicle configurations for Days 5–8 (3 rental days)</p>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                {[
+                  { id: 'minivan', title: 'Option A: Full 7-Seater Minivan', models: 'Kia Carnival / Hyundai Staria', dailyRate: 75000, pros: 'Fits all 6 + luggage; single driver needed', cons: 'Moderate road clearance for rough sections' },
+                  { id: '2crossovers', title: 'Option B: 2× Crossover SUVs', models: '2× Hyundai Tucson / Geely Monjaro', dailyRate: 60000, pros: 'Higher ground clearance; group flexibility', cons: 'Requires 2 drivers with IDP & 2 separate deposits' },
+                  { id: 'driver', title: 'Option C: Chauffeured Private Van', models: 'Toyota HiAce / Mercedes Sprinter', dailyRate: 100000, pros: 'Zero liability; driver navigates remote roads', cons: 'Higher daily cost; reduced privacy' },
+                ].map(opt => {
+                  const isSel = strategyType === opt.id;
+                  return (
+                    <div
+                      key={opt.id}
+                      onClick={() => setStrategyType(opt.id)}
+                      className={`p-5 rounded-[24px] cursor-pointer transition-all ${
+                        isSel
+                          ? 'neu-inset-deep ring-2 ring-[var(--neu-accent)] ring-offset-2 ring-offset-neu-bg'
+                          : 'neu-flat hover:neu-flat-hover'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-display font-bold text-base">{opt.title}</span>
+                        {isSel && (
+                          <div className="neu-inset-sm p-1 rounded-full text-[var(--neu-accent)]">
+                            <Check className="w-4 h-4 stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-xs font-mono font-bold text-[var(--neu-amber)] mt-1">
+                        ~{opt.dailyRate.toLocaleString()} KZT/day • 3 days = {(opt.dailyRate * 3).toLocaleString()} KZT total
+                      </div>
+                      <div className="text-xs text-neu-muted mt-1">{opt.models}</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 pt-2 text-xs">
+                        <div className="text-[var(--neu-teal)]">✓ {opt.pros}</div>
+                        <div className="text-rose-400">✕ {opt.cons}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Total Summary Inset Tile */}
+              <div className="neu-inset p-5 rounded-[24px] flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-center sm:text-left">
                 <div>
-                  <label className="text-[11px] text-slate-400 mb-1 block font-semibold">Amount (KZT)</label>
-                  <div className="relative">
-                    <input type="number" value={kztAmount} onChange={e => setKztAmount(Number(e.target.value))}
-                      className={`w-full p-3 rounded-xl border text-lg font-mono font-bold ${dm ? 'bg-slate-950 border-slate-700 text-emerald-400' : 'bg-slate-50 border-slate-300 text-slate-800'}`} />
-                    <span className="absolute right-3 top-3.5 text-xs text-slate-500 font-bold">KZT</span>
+                  <div className="text-[10px] text-neu-muted uppercase font-bold tracking-wider">Total Rental Cost (3 Days)</div>
+                  <div className="text-xl font-display font-extrabold text-[var(--neu-accent)]">
+                    ~{((strategyType === 'minivan' ? 75000 : strategyType === '2crossovers' ? 60000 : 100000) * 3).toLocaleString()} KZT
                   </div>
                 </div>
+                <div className="w-full sm:w-px h-px sm:h-10 bg-neu-muted/20" />
                 <div>
-                  <label className="text-[11px] text-slate-400 mb-1 block font-semibold">Currency</label>
-                  <select value={selectedCurrency} onChange={e => setSelectedCurrency(e.target.value)}
-                    className={`w-full p-3 rounded-xl border text-base font-bold ${dm ? 'bg-slate-950 border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-300 text-slate-800'}`}>
-                    <option>USD</option><option>INR</option><option>EUR</option><option>GBP</option>
+                  <div className="text-[10px] text-neu-muted uppercase font-bold tracking-wider">Per Person Share (÷6)</div>
+                  <div className="text-xl font-display font-extrabold text-[var(--neu-teal)]">
+                    ~{Math.round(((strategyType === 'minivan' ? 75000 : strategyType === '2crossovers' ? 60000 : 100000) * 3) / 6).toLocaleString()} KZT
+                  </div>
+                  <div className="text-[10px] text-neu-muted">
+                    (~${Math.round((((strategyType === 'minivan' ? 75000 : strategyType === '2crossovers' ? 60000 : 100000) * 3) / 6) * EXCHANGE_RATES.USD)} USD)
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Luggage & Roof Guidelines */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-[28px] neu-flat p-6 space-y-2">
+                <h3 className="font-display font-bold text-sm text-[var(--neu-amber)] flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" /> Roof Rack Protocol
+                </h3>
+                <ul className="text-xs text-neu-muted space-y-1.5 leading-relaxed pt-1">
+                  <li>• Must have crossbars — never tie cargo directly to the vehicle roof</li>
+                  <li>• Use waterproof IPX cargo bags or hard roof box to protect against steppe dust</li>
+                  <li>• Keep weight below 50–70 kg max to preserve vehicle stability on gravel tracks</li>
+                </ul>
+              </div>
+
+              <div className="rounded-[28px] neu-flat p-6 space-y-2">
+                <h3 className="font-display font-bold text-sm text-[var(--neu-teal)] flex items-center gap-2">
+                  <Luggage className="w-4 h-4" /> 6-Person Luggage Strategy
+                </h3>
+                <ul className="text-xs text-neu-muted space-y-1.5 leading-relaxed pt-1">
+                  <li>• Store large hard suitcases at your Almaty hotel luggage room on Day 5 morning</li>
+                  <li>• Travel with only 1 soft duffel bag per traveler to Saty & Basshi guesthouses</li>
+                  <li>• Re-pack all souvenirs and main baggage in Almaty on Day 8 prior to airport transfer</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════ ROUTES & TIMES TAB ══════════ */}
+        {activeTab === 'navigation' && (
+          <div className="space-y-6">
+            <div className="rounded-[32px] neu-flat p-6 sm:p-8 space-y-4">
+              <h2 className="text-lg sm:text-xl font-display font-extrabold flex items-center gap-2 text-[var(--neu-accent)]">
+                <Navigation className="w-5 h-5" /> Local Navigation & Mapping Apps
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                <div className="neu-inset-sm p-4 rounded-[24px] space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-sm text-amber-500">Yandex Go & Maps</span>
+                    <span className="neu-inset-sm text-[10px] font-bold text-[var(--neu-accent)] px-2 py-0.5 rounded-full">Essential</span>
+                  </div>
+                  <p className="text-xs text-neu-muted leading-relaxed">
+                    Used for all city taxi bookings (select &quot;XL&quot; for 6 passengers) and regional driving routes. Download Almaty region offline map before heading to canyons.
+                  </p>
+                </div>
+
+                <div className="neu-inset-sm p-4 rounded-[24px] space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-sm text-[var(--neu-teal)]">2GIS (Dva GIS)</span>
+                    <span className="neu-inset-sm text-[10px] font-bold text-[var(--neu-teal)] px-2 py-0.5 rounded-full">City Precise</span>
+                  </div>
+                  <p className="text-xs text-neu-muted leading-relaxed">
+                    Most accurate offline building entrance guide, Bus 12 schedule to Medeu, metro routes, and local pharmacy/supermarket locations.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Route Leg Matrix */}
+            <div className="rounded-[32px] neu-flat p-6 sm:p-8 space-y-4">
+              <h3 className="font-display font-bold text-base flex items-center gap-2 text-[var(--neu-teal)]">
+                <Compass className="w-4 h-4" /> Distance & Driving Time Matrix
+              </h3>
+              <div className="space-y-2.5 pt-1">
+                {ROUTE_LEGS.map((leg, idx) => (
+                  <div key={idx} className="neu-flat-sm p-4 rounded-2xl flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-xs sm:text-sm font-bold truncate">
+                        {leg.from} → <span className="text-[var(--neu-accent)]">{leg.to}</span>
+                      </div>
+                      <div className="text-[11px] text-neu-muted mt-0.5">{leg.road}</div>
+                    </div>
+                    <div className="shrink-0 text-right font-mono">
+                      <div className="text-xs sm:text-sm font-bold text-[var(--neu-amber)]">{leg.time}</div>
+                      <div className="text-[10px] text-neu-muted">{leg.dist}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════ PHRASEBOOK TAB ══════════ */}
+        {activeTab === 'phrases' && (
+          <div className="rounded-[32px] neu-flat p-6 sm:p-8 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h2 className="text-lg sm:text-xl font-display font-extrabold flex items-center gap-2 text-[var(--neu-accent)]">
+                  <BookOpen className="w-5 h-5" /> Russian & Kazakh Phrasebook
+                </h2>
+                <p className="text-xs text-neu-muted mt-1">Tap 🔊 to hear voice pronunciation aloud via speech synthesis</p>
+              </div>
+
+              {/* Phrase Category Filters */}
+              <div className="flex gap-2 overflow-x-auto scrollbar-none py-1">
+                {['all', 'Greetings', 'Taxi', 'Shopping', 'Emergency'].map(cat => {
+                  const isCat = phraseFilter === cat;
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => setPhraseFilter(cat)}
+                      className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        isCat
+                          ? 'neu-inset-deep text-[var(--neu-accent)] font-bold ring-1 ring-[var(--neu-accent)]/30'
+                          : 'neu-btn text-neu-muted hover:text-neu-text'
+                      }`}
+                    >
+                      {cat === 'Emergency' ? '🚨 ' + cat : cat}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Phrases List */}
+            <div className="space-y-3 pt-2">
+              {PHRASES.filter(p => phraseFilter === 'all' || p.cat === phraseFilter).map((p, idx) => (
+                <div key={idx} className="neu-flat rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--neu-accent)]">{p.cat}</div>
+                    <div className="font-display font-bold text-base mt-0.5">{p.mean}</div>
+                    <div className="text-sm font-semibold text-[var(--neu-teal)] mt-0.5">{p.ru}</div>
+                    <div className="text-xs text-neu-muted italic mt-0.5">&quot;{p.trans}&quot;</div>
+                  </div>
+                  <button
+                    onClick={() => speakText(p.ru)}
+                    className="neu-btn p-3 rounded-2xl text-[var(--neu-teal)] hover:text-[var(--neu-accent)] active:neu-inset shrink-0 transition-all"
+                    title="Pronounce"
+                  >
+                    <Volume2 className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ══════════ CURRENCY & BUDGET TAB ══════════ */}
+        {activeTab === 'currency' && (
+          <div className="space-y-6">
+            <div className="rounded-[32px] neu-flat p-6 sm:p-8 space-y-4">
+              <div>
+                <h2 className="text-lg sm:text-xl font-display font-extrabold flex items-center gap-2 text-[var(--neu-accent)]">
+                  <DollarSign className="w-5 h-5" /> Currency Converter & Budget Calculator
+                </h2>
+                <p className="text-xs text-neu-muted mt-1">Rates benchmark: 1 USD ≈ 475 KZT • 1 INR ≈ 5.7 KZT • 1 EUR ≈ 525 KZT</p>
+              </div>
+
+              {/* Converter Controls */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                <div>
+                  <label className="text-xs font-bold text-neu-muted mb-1.5 block">Amount (KZT)</label>
+                  <input
+                    type="number"
+                    value={kztAmount}
+                    onChange={e => setKztAmount(Number(e.target.value))}
+                    className="w-full neu-inset-deep rounded-2xl px-4 py-3.5 font-mono text-lg font-bold text-neu-text outline-none focus:ring-2 focus:ring-[var(--neu-accent)]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-neu-muted mb-1.5 block">Target Currency</label>
+                  <select
+                    value={selectedCurrency}
+                    onChange={e => setSelectedCurrency(e.target.value)}
+                    className="w-full neu-btn rounded-2xl px-4 py-3.5 font-bold text-neu-text outline-none"
+                  >
+                    <option value="USD">USD ($)</option>
+                    <option value="INR">INR (₹)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
                   </select>
                 </div>
-                <div className={`p-3 rounded-xl border flex flex-col justify-center ${dm ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-emerald-50 border-emerald-200'}`}>
-                  <div className="text-[10px] text-emerald-400 font-semibold uppercase">Result</div>
-                  <div className="text-xl font-extrabold text-emerald-300 font-mono mt-0.5">
+
+                <div className="neu-inset rounded-2xl p-4 flex flex-col justify-center text-center sm:text-right">
+                  <div className="text-[10px] text-neu-muted uppercase font-bold tracking-wider">Converted Equivalent</div>
+                  <div className="text-2xl font-display font-extrabold text-[var(--neu-teal)] font-mono mt-0.5">
                     {(kztAmount * EXCHANGE_RATES[selectedCurrency]).toLocaleString(undefined, { maximumFractionDigits: 2 })} {selectedCurrency}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Daily budget bars */}
-            <div className={`p-4 rounded-2xl border ${card}`}>
-              <h3 className="font-bold text-sm mb-3">Daily Spend — All 8 Days</h3>
-              <div className="space-y-2.5">
+            {/* All 8 Days Budget Bars */}
+            <div className="rounded-[32px] neu-flat p-6 sm:p-8 space-y-4">
+              <h3 className="font-display font-bold text-base">Full 8-Day Estimated Spending Breakdown</h3>
+              <div className="space-y-3 pt-1">
                 {ITINERARY_DATA.map(day => {
                   const total = day.activities.reduce((s, a) => s + a.kztExpense, 0);
                   const pct = Math.round((total / maxDayKZT) * 100);
                   return (
-                    <div key={day.day}>
-                      <div className="flex justify-between text-[11px] mb-1">
-                        <span className="font-medium">Day {day.day} <span className="text-slate-400 hidden sm:inline">— {day.title.slice(0, 28)}{day.title.length > 28 ? '…' : ''}</span></span>
-                        <span className="font-mono font-bold text-emerald-400">{(total/1000).toFixed(0)}K KZT</span>
+                    <div key={day.day} className="space-y-1">
+                      <div className="flex justify-between text-xs font-medium">
+                        <span>Day {day.day} <span className="text-neu-muted hidden sm:inline">— {day.title}</span></span>
+                        <span className="font-mono font-bold text-[var(--neu-amber)]">{(total/1000).toFixed(0)}K KZT</span>
                       </div>
-                      <div className={`h-2 rounded-full overflow-hidden ${dm ? 'bg-slate-800' : 'bg-slate-200'}`}>
-                        <div className={`h-2 rounded-full ${pct >= 90 ? 'bg-rose-500' : pct >= 65 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${pct}%` }} />
+                      <div className="h-2.5 rounded-full neu-inset-sm overflow-hidden p-0.5">
+                        <div
+                          className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-[var(--neu-teal)] to-[var(--neu-accent)]"
+                          style={{ width: `${pct}%` }}
+                        />
                       </div>
                     </div>
                   );
                 })}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-xs font-mono">
-                {[
-                  { label: 'Total / person', value: `~${totalTripKZT.toLocaleString()} KZT`, sub: `$${totalPerPersonUSD} USD`, color: 'emerald' },
-                  { label: 'Total × 6', value: `~${(totalTripKZT * 6).toLocaleString()} KZT`, sub: `$${totalPerPersonUSD * 6} USD`, color: 'cyan' },
-                  { label: 'Cash needed', value: '~200,000 KZT', sub: 'Saty/Basshi', color: 'amber' },
-                  { label: 'Cable cars/fees', value: '~20K KZT', sub: 'Per person', color: 'teal' },
-                ].map(stat => (
-                  <div key={stat.label} className={`p-3 rounded-xl border ${dm ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                    <div className="text-[9px] text-slate-400 uppercase">{stat.label}</div>
-                    <div className={`text-sm font-bold text-${stat.color}-400 mt-0.5`}>{stat.value}</div>
-                    <div className="text-[9px] text-slate-500">{stat.sub}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* ══════════ TRANSPORT ══════════ */}
-        {activeTab === 'transport' && (
-          <div className="space-y-4">
-            <div className={`p-4 rounded-2xl border ${card}`}>
-              <h2 className="text-base font-bold flex items-center gap-2 text-emerald-400 mb-3">
-                <Car className="w-5 h-5" /> 6-Person Transport Strategy
-              </h2>
-              <div className="space-y-2">
-                {[
-                  { id: 'minivan', title: 'Option A: Full Minivan', models: 'Kia Carnival / Hyundai Staria', dailyRate: 75000, pros: 'Fits 6 + luggage; one driver', cons: 'Lower clearance' },
-                  { id: '2crossovers', title: 'Option B: 2 Crossovers', models: '2× Hyundai Tucson / Geely', dailyRate: 60000, pros: 'High clearance; total flexibility', cons: '2 drivers with IDP + 2 deposits' },
-                  { id: 'driver', title: 'Option C: Private Driver', models: 'Toyota HiAce / Sprinter', dailyRate: 100000, pros: 'Zero liability; driver handles roads', cons: 'Higher cost; less privacy' },
-                ].map(opt => (
-                  <button key={opt.id} onClick={() => setStrategyType(opt.id)}
-                    className={`w-full p-3.5 rounded-xl border text-left transition-all ${strategyType === opt.id ? 'bg-emerald-500/10 border-emerald-400 ring-2 ring-emerald-500/20' : `${dm ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-slate-200'}`}`}>
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-sm">{opt.title}</span>
-                      {strategyType === opt.id && <Check className="w-4 h-4 text-emerald-400" />}
-                    </div>
-                    <div className="text-[11px] text-emerald-400 font-mono mt-0.5">~{opt.dailyRate.toLocaleString()} KZT/day • 3 days = {(opt.dailyRate * 3).toLocaleString()} KZT total</div>
-                    <div className="text-[10px] text-slate-400 mt-1">{opt.models}</div>
-                    <div className="mt-2 text-[10px] space-y-0.5">
-                      <p className="text-emerald-300">✓ {opt.pros}</p>
-                      <p className="text-rose-300">✕ {opt.cons}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-              <div className={`mt-3 p-3 rounded-xl border ${dm ? 'bg-slate-950 border-slate-800' : 'bg-slate-100 border-slate-300'} flex justify-between items-center text-xs font-mono`}>
-                <div>
-                  <div className="text-slate-400 text-[10px]">TOTAL RENTAL (3 DAYS)</div>
-                  <div className="text-base font-bold text-emerald-400">~{((strategyType === 'minivan' ? 75000 : strategyType === '2crossovers' ? 60000 : 100000) * 3).toLocaleString()} KZT</div>
+              {/* Total Stats Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 font-mono text-center">
+                <div className="neu-inset-sm p-3.5 rounded-2xl">
+                  <div className="text-[10px] text-neu-muted uppercase">Per Person Total</div>
+                  <div className="text-sm sm:text-base font-bold text-[var(--neu-accent)] mt-0.5">~{totalTripKZT.toLocaleString()} KZT</div>
+                  <div className="text-[10px] text-neu-muted mt-0.5">${totalPerPersonUSD} USD</div>
                 </div>
-                <div className="border-l border-slate-700 h-8 mx-3" />
-                <div>
-                  <div className="text-slate-400 text-[10px]">PER PERSON</div>
-                  <div className="text-base font-bold text-cyan-400">~{Math.round(((strategyType === 'minivan' ? 75000 : strategyType === '2crossovers' ? 60000 : 100000) * 3) / 6).toLocaleString()} KZT</div>
+                <div className="neu-inset-sm p-3.5 rounded-2xl">
+                  <div className="text-[10px] text-neu-muted uppercase">Group Total (×6)</div>
+                  <div className="text-sm sm:text-base font-bold text-[var(--neu-teal)] mt-0.5">~{(totalTripKZT * 6).toLocaleString()} KZT</div>
+                  <div className="text-[10px] text-neu-muted mt-0.5">${totalPerPersonUSD * 6} USD</div>
+                </div>
+                <div className="neu-inset-sm p-3.5 rounded-2xl">
+                  <div className="text-[10px] text-neu-muted uppercase">Cash Needed</div>
+                  <div className="text-sm sm:text-base font-bold text-[var(--neu-amber)] mt-0.5">~200,000 KZT</div>
+                  <div className="text-[10px] text-neu-muted mt-0.5">Saty/Basshi</div>
+                </div>
+                <div className="neu-inset-sm p-3.5 rounded-2xl">
+                  <div className="text-[10px] text-neu-muted uppercase">Activities/Passes</div>
+                  <div className="text-sm sm:text-base font-bold text-cyan-500 mt-0.5">~20K KZT</div>
+                  <div className="text-[10px] text-neu-muted mt-0.5">Per person</div>
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {[
-                { title: 'Roof Rack Safety', icon: AlertTriangle, color: 'amber', items: ['Must Have Crossbars — never tie directly to roof', 'Use IPX Cargo Bags or Hard Roof Box (dust storms!)', 'Weight limit: 50–70 kg max to avoid instability'] },
-                { title: 'Luggage Strategy', icon: Luggage, color: 'emerald', items: ['Leave main suitcases at Almaty hotel on Day 5', 'Take only 1 soft duffel per person to guesthouses', 'Re-pack at Almaty on Day 8 before flight'] },
-              ].map(sec => {
-                const Icon = sec.icon;
-                return (
-                  <div key={sec.title} className={`p-4 rounded-2xl border ${card}`}>
-                    <h3 className={`font-bold text-sm text-${sec.color}-400 flex items-center gap-2 mb-2`}>
-                      <Icon className="w-4 h-4" /> {sec.title}
-                    </h3>
-                    <ul className="space-y-1.5 text-xs text-slate-300">
-                      {sec.items.map((item, i) => (
-                        <li key={i} className="flex items-start gap-1.5"><span className="text-emerald-400 mt-0.5 shrink-0">•</span>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
           </div>
         )}
 
-        {/* ══════════ NAVIGATION / ROUTES ══════════ */}
-        {activeTab === 'navigation' && (
-          <div className="space-y-4">
-            <div className={`p-4 rounded-2xl border ${card}`}>
-              <h2 className="text-base font-bold flex items-center gap-2 text-cyan-400 mb-3">
-                <Navigation className="w-5 h-5" /> Navigation Apps
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {[
-                  { name: 'Yandex Maps / Go', badge: 'Essential', color: 'yellow', desc: 'City taxi (XL for 6 people) + offline Almaty region map download' },
-                  { name: '2GIS (Dva GIS)', badge: 'City Precise', color: 'emerald', desc: 'Bus 12 to Medeu, building entrances, offline pedestrian paths' },
-                ].map(app => (
-                  <div key={app.name} className={`p-3.5 rounded-xl border ${surface}`}>
-                    <div className="flex items-center justify-between">
-                      <span className={`font-bold text-sm text-${app.color}-400`}>{app.name}</span>
-                      <span className={`text-[9px] bg-${app.color}-400/20 text-${app.color}-300 px-1.5 py-0.5 rounded border border-${app.color}-400/30`}>{app.badge}</span>
-                    </div>
-                    <p className="text-xs text-slate-300 mt-1.5">{app.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className={`p-4 rounded-2xl border ${card}`}>
-              <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
-                <Compass className="w-4 h-4 text-emerald-400" /> Distance & Travel Time
-              </h3>
-              <div className="space-y-2">
-                {ROUTE_LEGS.map((leg, idx) => (
-                  <div key={idx} className={`p-3 rounded-xl border ${surface}`}>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold">{leg.from} → <span className="text-emerald-400">{leg.to}</span></div>
-                        <div className="text-[10px] text-slate-400 mt-0.5 leading-tight">{leg.road}</div>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <div className="text-xs font-mono font-bold text-amber-300">{leg.time}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">{leg.dist}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ══════════ CHECKLIST ══════════ */}
+        {/* ══════════ PACKING CHECKLIST TAB ══════════ */}
         {activeTab === 'checklist' && (
-          <div className="space-y-4">
-            <div className={`p-4 rounded-2xl border ${card}`}>
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-base font-bold flex items-center gap-2 text-emerald-400">
-                  <CheckSquare className="w-5 h-5" /> Packing Checklist
-                </h2>
-                <span className="text-xs font-bold text-emerald-400">{packingItems.filter(i => i.checked).length}/{packingItems.length}</span>
+          <div className="space-y-6">
+            <div className="rounded-[32px] neu-flat p-6 sm:p-8 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg sm:text-xl font-display font-extrabold flex items-center gap-2 text-[var(--neu-accent)]">
+                    <CheckSquare className="w-5 h-5" /> Expedition Packing Checklist
+                  </h2>
+                  <p className="text-xs text-neu-muted mt-1">
+                    State is saved locally per browser device ({packingItems.filter(i => i.checked).length} of {packingItems.length} packed)
+                  </p>
+                </div>
+                <button
+                  onClick={() => setCheckedIds(DEFAULT_CHECKED_IDS)}
+                  className="neu-btn px-3 py-1.5 rounded-xl text-xs text-neu-muted hover:text-neu-text active:neu-inset transition-all"
+                  title="Reset to default items"
+                >
+                  Reset
+                </button>
               </div>
-              <div className={`h-2.5 rounded-full overflow-hidden mb-4 ${dm ? 'bg-slate-800' : 'bg-slate-200'}`}>
-                <div className="h-2.5 rounded-full bg-emerald-500 transition-all duration-500"
-                  style={{ width: `${Math.round((packingItems.filter(i => i.checked).length / packingItems.length) * 100)}%` }} />
+
+              {/* Checklist Progress Bar */}
+              <div className="h-3 rounded-full neu-inset-sm overflow-hidden p-0.5">
+                <div
+                  className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-[var(--neu-teal)] to-[var(--neu-accent)]"
+                  style={{ width: `${Math.round((packingItems.filter(i => i.checked).length / packingItems.length) * 100)}%` }}
+                />
               </div>
-              <div className="space-y-2">
+
+              {/* Checklist Items */}
+              <div className="space-y-2.5 pt-2">
                 {packingItems.map(item => (
-                  <div key={item.id} onClick={() => toggleChecklist(item.id)}
-                    className={`p-3.5 rounded-xl border flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-all ${
+                  <div
+                    key={item.id}
+                    onClick={() => toggleChecklist(item.id)}
+                    className={`rounded-2xl p-4 flex items-center gap-3.5 cursor-pointer transition-all ${
                       item.checked
-                        ? `${dm ? 'bg-emerald-950/20 border-emerald-800/50' : 'bg-emerald-50 border-emerald-200'}`
-                        : `${dm ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-slate-200'}`
-                    }`}>
-                    <div className={`w-6 h-6 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${item.checked ? 'bg-emerald-500 border-emerald-400' : 'border-slate-600'}`}>
-                      {item.checked && <Check className="w-3.5 h-3.5 text-slate-950 stroke-[3]" />}
+                        ? 'neu-inset-sm opacity-85'
+                        : 'neu-flat hover:neu-flat-hover'
+                    }`}
+                  >
+                    <div
+                      className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                        item.checked
+                          ? 'neu-inset-deep bg-[var(--neu-teal)] text-slate-900 shadow-none'
+                          : 'neu-inset text-transparent'
+                      }`}
+                    >
+                      <Check className="w-4 h-4 stroke-[3]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className={`text-xs font-medium leading-tight ${item.checked ? 'line-through opacity-50' : ''}`}>{item.text}</span>
+                      <span className={`text-xs sm:text-sm font-medium leading-tight ${item.checked ? 'line-through text-neu-muted' : 'text-neu-text'}`}>
+                        {item.text}
+                      </span>
                     </div>
-                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${dm ? 'bg-slate-800 text-slate-500 border border-slate-700' : 'bg-slate-200 text-slate-500'}`}>
+                    <span className="neu-inset-sm text-[10px] font-mono px-2 py-0.5 rounded-lg text-neu-muted shrink-0">
                       {item.category}
                     </span>
                   </div>
@@ -1071,22 +1224,25 @@ export default function KazakhstanApp() {
               </div>
             </div>
 
-            {/* Emergency contacts */}
-            <div className={`p-4 rounded-2xl border ${dm ? 'bg-rose-950/20 border-rose-900/50' : 'bg-rose-50 border-rose-200'}`}>
-              <h3 className="font-bold text-sm text-rose-400 flex items-center gap-2 mb-3">
-                <PhoneCall className="w-4 h-4" /> Emergency Contacts — Kazakhstan
+            {/* Emergency Numbers Card */}
+            <div className="rounded-[32px] neu-flat p-6 sm:p-8 space-y-3">
+              <h3 className="font-display font-bold text-base text-[var(--neu-rose)] flex items-center gap-2">
+                <PhoneCall className="w-4 h-4" /> Emergency Phone Contacts (Kazakhstan)
               </h3>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
                 {[
-                  { label: 'RESCUE / FIRE', number: '101 / 112' },
-                  { label: 'POLICE', number: '102' },
-                  { label: 'AMBULANCE', number: '103' },
-                  { label: 'ALMATY AIRPORT', number: '+7 727 270 3333' },
+                  { label: 'Rescue / Fire', number: '101' },
+                  { label: 'Police', number: '102' },
+                  { label: 'Ambulance', number: '103' },
+                  { label: 'Universal', number: '112' },
                 ].map(e => (
-                  <a key={e.label} href={`tel:${e.number.replace(/[^+\d]/g, '')}`}
-                    className="p-3 rounded-xl bg-slate-900/50 border border-slate-800 block active:scale-95 transition-transform">
-                    <div className="text-[9px] text-slate-400 uppercase">{e.label}</div>
-                    <div className="font-bold text-rose-300 text-sm font-mono mt-0.5">{e.number}</div>
+                  <a
+                    key={e.label}
+                    href={`tel:${e.number}`}
+                    className="neu-btn p-3.5 rounded-2xl text-center block transition-all active:neu-inset"
+                  >
+                    <div className="text-[10px] text-neu-muted uppercase font-bold">{e.label}</div>
+                    <div className="text-xl font-display font-extrabold text-[var(--neu-rose)] font-mono mt-0.5">{e.number}</div>
                   </a>
                 ))}
               </div>
@@ -1094,75 +1250,154 @@ export default function KazakhstanApp() {
           </div>
         )}
 
+        {/* ══════════ MORE HUB (MOBILE) ══════════ */}
+        {activeTab === 'more' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-3.5">
+              {[
+                { id: 'currency',   label: 'Currency & Budget',   icon: DollarSign,  desc: 'Converter + 8-day breakdown' },
+                { id: 'transport',  label: 'Car & Luggage',        icon: Car,         desc: '3 vehicle options + share calc' },
+                { id: 'navigation', label: 'Routes & Times',       icon: Navigation,  desc: 'Leg distances & mapping apps' },
+                { id: 'checklist',  label: 'Packing Checklist',    icon: CheckSquare, desc: `${packingItems.filter(i => i.checked).length}/${packingItems.length} packed` },
+                { id: 'weather',    label: 'Live Weather',         icon: Sun,         desc: 'Real-time forecasts for 4 stops' },
+                { id: 'map',        label: 'Interactive Map',      icon: Map,         desc: '11 stops & road trip route' },
+              ].map(sec => {
+                const Icon = sec.icon;
+                return (
+                  <button
+                    key={sec.id}
+                    onClick={() => setActiveTab(sec.id)}
+                    className="neu-btn p-5 rounded-[28px] text-left transition-all active:neu-inset"
+                  >
+                    <div className="neu-inset-sm w-10 h-10 rounded-2xl flex items-center justify-center mb-3 text-[var(--neu-accent)]">
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div className="font-display font-bold text-sm leading-tight">{sec.label}</div>
+                    <div className="text-[11px] text-neu-muted mt-1 leading-snug">{sec.desc}</div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Quick Currency Converter Card */}
+            <div className="rounded-[32px] neu-flat p-6 space-y-3">
+              <h3 className="font-display font-bold text-sm flex items-center gap-2 text-[var(--neu-accent)]">
+                <DollarSign className="w-4 h-4" /> Quick KZT Converter
+              </h3>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="number"
+                  value={kztAmount}
+                  onChange={e => setKztAmount(Number(e.target.value))}
+                  className="flex-1 neu-inset-deep rounded-2xl p-3 font-mono font-bold text-base outline-none"
+                />
+                <select
+                  value={selectedCurrency}
+                  onChange={e => setSelectedCurrency(e.target.value)}
+                  className="neu-btn p-3 rounded-2xl font-bold text-sm outline-none"
+                >
+                  <option>USD</option><option>INR</option><option>EUR</option><option>GBP</option>
+                </select>
+              </div>
+              <div className="neu-inset p-3.5 rounded-2xl text-center">
+                <div className="text-xl font-display font-extrabold text-[var(--neu-teal)] font-mono">
+                  {(kztAmount * EXCHANGE_RATES[selectedCurrency]).toLocaleString(undefined, { maximumFractionDigits: 2 })} {selectedCurrency}
+                </div>
+              </div>
+            </div>
+
+            {/* Print Full Itinerary Button */}
+            <button
+              onClick={handlePrint}
+              className="w-full neu-btn p-4 rounded-[28px] flex items-center justify-center gap-2 text-xs font-bold text-neu-text active:neu-inset transition-all"
+            >
+              <Printer className="w-4 h-4 text-neu-muted" /> Print Full 8-Day Itinerary
+            </button>
+          </div>
+        )}
+
       </main>
 
-      {/* ══════════════ MOBILE BOTTOM NAV ══════════════ */}
-      <nav className={`no-print md:hidden fixed bottom-0 left-0 right-0 z-50 border-t ${dm ? 'bg-slate-900/98 border-slate-800' : 'bg-white/98 border-slate-200'} backdrop-blur-md pb-safe`}>
-        <div className="flex items-center justify-around py-1.5">
+      {/* ══════════════ MOBILE BOTTOM NAVIGATION ══════════════ */}
+      <nav className="no-print md:hidden fixed bottom-0 left-0 right-0 z-50 neu-flat rounded-t-[28px] pb-safe px-2 py-2">
+        <div className="flex items-center justify-around">
           {mobileNavTabs.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id || (tab.id === 'more' && !mobileNavTabs.slice(0, 4).some(t => t.id === activeTab));
             return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl transition-all min-w-[56px] ${
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex flex-col items-center gap-1 py-1.5 px-3.5 rounded-2xl transition-all min-w-[56px] ${
                   isActive
-                    ? 'text-emerald-400'
-                    : `${dm ? 'text-slate-500 active:text-slate-300' : 'text-slate-400 active:text-slate-700'}`
-                }`}>
+                    ? 'neu-inset-deep text-[var(--neu-accent)] font-bold ring-1 ring-[var(--neu-accent)]/30'
+                    : 'text-neu-muted hover:text-neu-text'
+                }`}
+              >
                 <Icon className={`w-5 h-5 ${isActive ? 'stroke-2' : 'stroke-[1.5]'}`} />
-                <span className={`text-[10px] font-medium ${isActive ? 'font-bold' : ''}`}>{tab.label}</span>
-                {isActive && <div className="w-1 h-1 rounded-full bg-emerald-400" />}
+                <span className="text-[10px] font-medium">{tab.label}</span>
               </button>
             );
           })}
         </div>
       </nav>
 
-      {/* ══════════════ FLOATING EMERGENCY BUTTON ══════════════ */}
+      {/* ══════════════ FLOATING EMERGENCY FAB ══════════════ */}
       <button
         onClick={() => setShowEmergency(true)}
-        className="no-print fixed bottom-20 md:bottom-6 right-4 z-40 w-12 h-12 rounded-full bg-rose-600 text-white shadow-lg shadow-rose-900/50 flex items-center justify-center border-2 border-rose-400 active:scale-90 transition-transform"
-        title="Emergency Contacts"
+        className="no-print fixed bottom-20 md:bottom-8 right-4 sm:right-6 z-40 w-13 h-13 sm:w-14 sm:h-14 rounded-full neu-btn bg-[var(--neu-rose)] text-white shadow-xl flex items-center justify-center active:scale-95 transition-transform"
+        title="Emergency Help"
       >
-        <PhoneCall className="w-5 h-5" />
+        <PhoneCall className="w-5 h-5 text-white" />
       </button>
 
       {/* ══════════════ EMERGENCY MODAL ══════════════ */}
       {showEmergency && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4" onClick={() => setShowEmergency(false)}>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className={`relative w-full max-w-sm rounded-2xl border p-5 ${dm ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} shadow-2xl`}
-            onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-rose-400 flex items-center gap-2">
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowEmergency(false)}>
+          <div
+            className="neu-flat rounded-[32px] p-6 max-w-sm w-full space-y-4 shadow-2xl relative"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-display font-extrabold text-base text-[var(--neu-rose)] flex items-center gap-2">
                 <PhoneCall className="w-5 h-5" /> Emergency Contacts
               </h3>
-              <button onClick={() => setShowEmergency(false)} className={`p-1.5 rounded-lg ${dm ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}>
+              <button
+                onClick={() => setShowEmergency(false)}
+                className="neu-btn p-2 rounded-xl text-neu-muted hover:text-neu-text"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+
+            <div className="grid grid-cols-2 gap-2.5">
               {[
-                { label: 'RESCUE / FIRE', number: '101', dialNum: '101' },
-                { label: 'POLICE', number: '102', dialNum: '102' },
-                { label: 'AMBULANCE', number: '103', dialNum: '103' },
-                { label: 'UNIVERSAL', number: '112', dialNum: '112' },
+                { label: 'Rescue / Fire', number: '101' },
+                { label: 'Police', number: '102' },
+                { label: 'Ambulance', number: '103' },
+                { label: 'Universal', number: '112' },
               ].map(e => (
-                <a key={e.label} href={`tel:${e.dialNum}`}
-                  className="p-3.5 rounded-xl bg-rose-900/20 border border-rose-800/50 text-center active:scale-95 transition-transform block">
-                  <div className="text-[9px] text-slate-400 uppercase mb-0.5">{e.label}</div>
-                  <div className="font-extrabold text-rose-300 text-2xl font-mono">{e.number}</div>
-                  <div className="text-[9px] text-slate-400 mt-0.5">Tap to call</div>
+                <a
+                  key={e.label}
+                  href={`tel:${e.number}`}
+                  className="neu-flat-sm p-4 rounded-2xl text-center block transition-all active:neu-inset"
+                >
+                  <div className="text-[10px] text-neu-muted uppercase font-bold">{e.label}</div>
+                  <div className="text-2xl font-display font-extrabold text-[var(--neu-rose)] font-mono mt-0.5">{e.number}</div>
+                  <div className="text-[9px] text-neu-muted mt-0.5">Tap to call</div>
                 </a>
               ))}
             </div>
-            <a href="tel:+77272703333"
-              className="mt-3 w-full p-3 rounded-xl bg-slate-800/60 border border-slate-700 flex items-center justify-between active:scale-95 transition-transform block">
+
+            <a
+              href="tel:+77272703333"
+              className="neu-flat-sm p-4 rounded-2xl flex items-center justify-between transition-all active:neu-inset block"
+            >
               <div>
-                <div className="text-[9px] text-slate-400 uppercase">ALMATY AIRPORT</div>
-                <div className="font-bold text-rose-300 font-mono">+7 727 270 3333</div>
+                <div className="text-[10px] text-neu-muted uppercase font-bold">Almaty Airport Support</div>
+                <div className="font-mono font-bold text-sm text-[var(--neu-rose)] mt-0.5">+7 727 270 3333</div>
               </div>
-              <PhoneCall className="w-4 h-4 text-rose-400" />
+              <PhoneCall className="w-4 h-4 text-[var(--neu-rose)]" />
             </a>
           </div>
         </div>

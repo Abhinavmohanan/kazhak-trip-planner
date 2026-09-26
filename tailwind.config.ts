@@ -8,7 +8,24 @@ const config: Config = {
   ],
   darkMode: 'class',
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        display: ['var(--font-display)', 'system-ui', 'sans-serif'],
+        body: ['var(--font-body)', 'system-ui', 'sans-serif'],
+      },
+      colors: {
+        neu: {
+          bg: 'var(--neu-bg)',
+          card: 'var(--neu-card)',
+          text: 'var(--neu-text)',
+          muted: 'var(--neu-muted)',
+          accent: 'var(--neu-accent)',
+          teal: 'var(--neu-teal)',
+          amber: 'var(--neu-amber)',
+          rose: 'var(--neu-rose)',
+        },
+      },
+    },
   },
   plugins: [],
 };

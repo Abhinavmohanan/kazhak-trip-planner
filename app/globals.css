@@ -4,6 +4,41 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --neu-bg: #E0E5EC;
+  --neu-card: #E0E5EC;
+  --neu-text: #3D4852;
+  --neu-muted: #6B7280;
+  --neu-accent: #6C63FF;
+  --neu-accent-light: #8B84FF;
+  --neu-teal: #38B2AC;
+  --neu-amber: #D97706;
+  --neu-rose: #E11D48;
+
+  --neu-shadow-dark: rgba(163, 177, 198, 0.6);
+  --neu-shadow-dark-hover: rgba(163, 177, 198, 0.7);
+  --neu-shadow-light: rgba(255, 255, 255, 0.55);
+  --neu-shadow-light-hover: rgba(255, 255, 255, 0.65);
+}
+
+.dark {
+  --neu-bg: #1A1F26;
+  --neu-card: #1A1F26;
+  --neu-text: #F1F5F9;
+  --neu-muted: #94A3B8;
+  --neu-accent: #8B84FF;
+  --neu-accent-light: #A5A0FF;
+  --neu-teal: #2DD4BF;
+  --neu-amber: #FBBF24;
+  --neu-rose: #FB7185;
+
+  --neu-shadow-dark: rgba(0, 0, 0, 0.7);
+  --neu-shadow-dark-hover: rgba(0, 0, 0, 0.85);
+  --neu-shadow-light: rgba(255, 255, 255, 0.045);
+  --neu-shadow-light-hover: rgba(255, 255, 255, 0.065);
+}
+
+/* ─── Neumorphic Utility Classes ─── */
 @layer utilities {
   .scrollbar-none {
     -ms-overflow-style: none;
@@ -13,22 +48,94 @@
     display: none;
   }
 
-  /* iOS safe area bottom padding for bottom nav */
   .pb-safe {
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
   .mb-safe {
     margin-bottom: env(safe-area-inset-bottom);
   }
+
+  /* Extruded standard */
+  .neu-flat {
+    background-color: var(--neu-card);
+    box-shadow: 9px 9px 16px var(--neu-shadow-dark), -9px -9px 16px var(--neu-shadow-light);
+  }
+
+  /* Extruded on hover */
+  .neu-flat-hover:hover {
+    box-shadow: 12px 12px 20px var(--neu-shadow-dark-hover), -12px -12px 20px var(--neu-shadow-light-hover);
+    transform: translateY(-2px);
+  }
+
+  /* Extruded small */
+  .neu-flat-sm {
+    background-color: var(--neu-card);
+    box-shadow: 5px 5px 10px var(--neu-shadow-dark), -5px -5px 10px var(--neu-shadow-light);
+  }
+
+  /* Inset / Pressed standard */
+  .neu-inset {
+    background-color: var(--neu-card);
+    box-shadow: inset 6px 6px 10px var(--neu-shadow-dark), inset -6px -6px 10px var(--neu-shadow-light);
+  }
+
+  /* Inset deep (for inputs, icon wells, active selection) */
+  .neu-inset-deep {
+    background-color: var(--neu-card);
+    box-shadow: inset 10px 10px 20px var(--neu-shadow-dark-hover), inset -10px -10px 20px var(--neu-shadow-light-hover);
+  }
+
+  /* Inset small (for tracks, pills) */
+  .neu-inset-sm {
+    background-color: var(--neu-card);
+    box-shadow: inset 3px 3px 6px var(--neu-shadow-dark), inset -3px -3px 6px var(--neu-shadow-light);
+  }
+
+  /* Interactive button mechanics */
+  .neu-btn {
+    background-color: var(--neu-card);
+    box-shadow: 6px 6px 12px var(--neu-shadow-dark), -6px -6px 12px var(--neu-shadow-light);
+    transition: all 0.25s ease-out;
+  }
+  .neu-btn:hover {
+    box-shadow: 9px 9px 16px var(--neu-shadow-dark-hover), -9px -9px 16px var(--neu-shadow-light-hover);
+    transform: translateY(-1px);
+  }
+  .neu-btn:active {
+    box-shadow: inset 4px 4px 8px var(--neu-shadow-dark), inset -4px -4px 8px var(--neu-shadow-light);
+    transform: translateY(0.5px);
+  }
+
+  /* Accent CTA button */
+  .neu-btn-primary {
+    background-color: var(--neu-accent);
+    color: #FFFFFF;
+    box-shadow: 6px 6px 14px rgba(108, 99, 255, 0.4), -6px -6px 14px var(--neu-shadow-light);
+    transition: all 0.25s ease-out;
+  }
+  .neu-btn-primary:hover {
+    box-shadow: 8px 8px 18px rgba(108, 99, 255, 0.5), -8px -8px 18px var(--neu-shadow-light-hover);
+    transform: translateY(-1px);
+  }
+  .neu-btn-primary:active {
+    box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.35), inset -4px -4px 8px rgba(255, 255, 255, 0.2);
+    transform: translateY(0.5px);
+  }
 }
 
-/* ── Pulse animation for "NOW" badge ── */
+/* ── Animation details ── */
 @keyframes now-pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
-  50%       { opacity: 0.85; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(56, 178, 172, 0.6);
+  }
+  50% {
+    opacity: 0.85;
+    box-shadow: 0 0 0 8px rgba(56, 178, 172, 0);
+  }
 }
 .now-pulse {
-  animation: now-pulse 2s ease-in-out infinite;
+  animation: now-pulse 2.2s ease-in-out infinite;
 }
 
 /* ── Print Styles ── */
@@ -48,7 +155,7 @@
     padding: 8px !important;
     margin-bottom: 12px !important;
     background: white !important;
-    border-radius: 4px !important;
+    border-radius: 8px !important;
   }
 
   header { position: static !important; box-shadow: none !important; }

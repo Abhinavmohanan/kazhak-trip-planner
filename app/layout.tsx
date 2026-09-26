@@ -1,21 +1,33 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Plus_Jakarta_Sans, DM_Sans } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] });
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['500', '600', '700', '800'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-body',
+  display: 'swap',
+});
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#10b981',
+  themeColor: '#6C63FF',
 };
 
 export const metadata: Metadata = {
   title: 'KZ Trip — Kazakhstan 8-Day Itinerary',
   description:
-    'Complete travel planner for 6 people across Almaty, Charyn Canyon, Kolsai Lakes, Kaindy, and Altyn Emel. Live weather, interactive map, phrasebook, currency converter.',
+    'Complete tactile travel companion for 6 people across Almaty, Charyn Canyon, Kolsai Lakes, Kaindy, and Altyn Emel. Live weather, interactive map, phrasebook, currency converter.',
   keywords: ['Kazakhstan', 'Almaty', 'Charyn Canyon', 'Kolsai Lakes', 'travel itinerary', 'Central Asia'],
   manifest: '/manifest.json',
   appleWebApp: {
@@ -32,7 +44,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${plusJakartaSans.variable} ${dmSans.variable}`}>
       <head>
         {/* iOS PWA */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -41,7 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Android PWA */}
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className="font-body antialiased transition-colors duration-300">{children}</body>
     </html>
   );
 }
