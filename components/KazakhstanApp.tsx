@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import ActivityEditModal from './ActivityEditModal';
+import DayEditModal from './DayEditModal';
 import {
   Calendar, MapPin, Compass, Car, Luggage, DollarSign, BookOpen,
   CheckSquare, Volume2, ShieldAlert, PhoneCall,
@@ -263,6 +264,7 @@ export default function KazakhstanApp() {
   const [expandedActivity,  setExpandedActivity]  = useState<number | null>(null);
   const [showEmergency,     setShowEmergency]     = useState(false);
   const dayScrollRef = useRef<HTMLDivElement>(null);
+  const [isDayEditOpen,     setIsDayEditOpen]     = useState(false);
 
   // ── Edit Modal State ─────────────────────────────────────────────────────────
   const [editModal, setEditModal] = useState<{
@@ -410,6 +412,17 @@ export default function KazakhstanApp() {
     updated[dayIdx] = currentDay;
     persistItinerary(updated);
     setEditModal(prev => ({ ...prev, isOpen: false }));
+  };
+
+  // Save day overview (Title, Location, Overnight stay)
+  const handleSaveDay = (updatedFields: Partial<DayData>) => {
+    const dayIdx = itinerary.findIndex(d => d.day === currentDayData.day);
+    if (dayIdx === -1) return;
+
+    const updated = [...itinerary];
+    updated[dayIdx] = { ...updated[dayIdx], ...updatedFields };
+    persistItinerary(updated);
+    setIsDayEditOpen(false);
   };
 
   // Sync dark class on HTML root
@@ -718,9 +731,18 @@ export default function KazakhstanApp() {
                   <div className="neu-inset-sm inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-display font-bold uppercase tracking-wider text-[var(--neu-accent)]">
                     Day {currentDayData.day} • {currentDayData.date}
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-display font-extrabold mt-2 leading-tight">
-                    {currentDayData.title}
-                  </h2>
+                  <div className="flex items-center gap-2.5 mt-2 flex-wrap">
+                    <h2 className="text-xl sm:text-2xl font-display font-extrabold leading-tight">
+                      {currentDayData.title}
+                    </h2>
+                    <button
+                      onClick={() => setIsDayEditOpen(true)}
+                      className="neu-btn p-1.5 rounded-xl text-neu-muted hover:text-[var(--neu-accent)] active:neu-inset transition-all"
+                      title="Edit Day Overview (Title, Location, Overnight Stay)"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                   <div className="flex flex-wrap items-center gap-4 text-xs text-neu-muted mt-2 font-medium">
                     <span className="flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-[var(--neu-teal)]" /> {currentDayData.location}
@@ -1555,16 +1577,30 @@ export default function KazakhstanApp() {
       </button>
 
       {/* ══════════════ ACTIVITY EDIT MODAL ══════════════ */}
-      <ActivityEditModal
-        isOpen={editModal.isOpen}
-        activity={editModal.activity}
-        dayNumber={editModal.dayNumber}
-        activityIndex={editModal.activityIndex}
-        isNew={editModal.isNew}
-        onSave={handleSaveActivity}
-        onDelete={handleDeleteActivity}
-        onClose={() => setEditModal(prev => ({ ...prev, isOpen: false }))}
-      />
+      {editModal.isOpen && (
+        <ActivityEditModal
+          key={`${editModal.dayNumber}-${editModal.activityIndex ?? 'new'}-${editModal.activity.place}`}
+          isOpen={editModal.isOpen}
+          activity={editModal.activity}
+          dayNumber={editModal.dayNumber}
+          activityIndex={editModal.activityIndex}
+          isNew={editModal.isNew}
+          onSave={handleSaveActivity}
+          onDelete={handleDeleteActivity}
+          onClose={() => setEditModal(prev => ({ ...prev, isOpen: false }))}
+        />
+      )}
+
+      {/* ══════════════ DAY OVERVIEW EDIT MODAL ══════════════ */}
+      {isDayEditOpen && (
+        <DayEditModal
+          key={`day-${currentDayData.day}-${currentDayData.title}`}
+          isOpen={isDayEditOpen}
+          dayData={currentDayData}
+          onSave={handleSaveDay}
+          onClose={() => setIsDayEditOpen(false)}
+        />
+      )}
 
       {/* ══════════════ EMERGENCY MODAL ══════════════ */}
       {showEmergency && (

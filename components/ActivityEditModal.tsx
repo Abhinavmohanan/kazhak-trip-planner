@@ -36,6 +36,21 @@ export default function ActivityEditModal({
 }: ActivityEditModalProps) {
   const [formData, setFormData] = useState<Activity>({ ...activity });
 
+  // Re-sync form state whenever the selected activity changes or modal opens
+  React.useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        time: activity?.time || '',
+        place: activity?.place || '',
+        whatToDo: activity?.whatToDo || '',
+        mustTry: activity?.mustTry || '',
+        lookOutFor: activity?.lookOutFor || '',
+        kztExpense: activity?.kztExpense ?? 0,
+        category: activity?.category || 'sightseeing',
+      });
+    }
+  }, [activity, isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
