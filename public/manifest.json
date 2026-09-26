@@ -1,0 +1,19 @@
+{
+  "name": "Kazakhstan Trip Itinerary",
+  "short_name": "KZ Trip",
+  "description": "8-day Kazakhstan travel companion for 6 people — Almaty, Charyn, Saty, Altyn Emel",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "categories": ["travel", "navigation"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23020617'/><text y='.9em' font-size='80' x='10'>🧭</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
