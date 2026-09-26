@@ -846,6 +846,15 @@ export default function KazakhstanApp() {
               </div>
             </div>
 
+            {/* Quick helper tip banner */}
+            <div className="flex items-center justify-between text-[11px] text-neu-muted px-2 pt-1">
+              <span className="flex items-center gap-1.5">
+                <GripVertical className="w-3.5 h-3.5 text-[var(--neu-accent)] inline shrink-0" />
+                <span>Hold <strong>⋮⋮</strong> handle to drag, or tap card to use <strong>▲/▼</strong></span>
+              </span>
+              <span className="text-[10px] font-mono text-neu-muted/70">{filteredActivities.length} items</span>
+            </div>
+
             {/* Activities List (Accordion-style Neumorphic Cards with Edit Trigger) */}
             <div className="space-y-3.5">
               {filteredActivities.map((act, idx) => {
@@ -961,10 +970,11 @@ export default function KazakhstanApp() {
                               setDragOverIdx(null);
                             }}
                             onClick={(e) => e.stopPropagation()}
-                            className="touch-none cursor-grab active:cursor-grabbing neu-btn p-2 rounded-xl text-neu-muted hover:text-[var(--neu-accent)] active:neu-inset transition-all flex items-center justify-center active:scale-110"
+                            className="touch-none cursor-grab active:cursor-grabbing neu-btn w-8 h-8 rounded-xl text-neu-muted hover:text-[var(--neu-accent)] active:neu-inset transition-all flex items-center justify-center shrink-0 active:scale-110"
                             title="Press & hold to drag & shuffle"
+                            aria-label="Press and hold to reorder activity"
                           >
-                            <GripVertical className="w-3.5 h-3.5" />
+                            <GripVertical className="w-4 h-4" />
                           </button>
 
                           <button
@@ -973,8 +983,9 @@ export default function KazakhstanApp() {
                               e.stopPropagation();
                               openEditModal(currentDayData.day, act, idx);
                             }}
-                            className="neu-btn p-2 rounded-xl text-[var(--neu-accent)] hover:text-white hover:bg-[var(--neu-accent)] active:neu-inset transition-all"
+                            className="neu-btn w-8 h-8 rounded-xl text-[var(--neu-accent)] hover:text-white hover:bg-[var(--neu-accent)] active:neu-inset transition-all flex items-center justify-center shrink-0"
                             title="Edit this activity"
+                            aria-label="Edit this activity"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
