@@ -134,8 +134,14 @@
     box-shadow: 0 0 0 8px rgba(56, 178, 172, 0);
   }
 }
+
 .now-pulse {
   animation: now-pulse 2.2s ease-in-out infinite;
+}
+
+/* ── Dark Mode Map Tiles (Zero API key required, eliminates Carto watermark) ── */
+.dark-tiles {
+  filter: invert(100%) hue-rotate(180deg) brightness(85%) contrast(90%);
 }
 
 /* ── Print Styles ── */

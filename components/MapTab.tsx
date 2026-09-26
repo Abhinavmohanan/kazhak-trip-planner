@@ -72,17 +72,11 @@ export default function MapTab({ isDarkMode }: MapTabProps) {
         >
           <FixLeafletIcons />
 
-          {isDarkMode ? (
-            <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            />
-          ) : (
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-          )}
+          <TileLayer
+            className={isDarkMode ? 'dark-tiles' : ''}
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          />
 
           <Polyline
             positions={ROAD_TRIP_ROUTE}
