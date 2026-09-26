@@ -1,6 +1,6 @@
 # 🇰🇿 Kazakhstan 8-Day Trip Itinerary App
 
-An interactive travel planner for a 6-person Kazakhstan trip (Sep 11–18, 2026). Built with **Next.js 16**, **Tailwind CSS**, and **TypeScript**. Deployable to Vercel in one click.
+An interactive travel planner for a 6-person Kazakhstan trip (Oct 11–18, 2026). Built with **Next.js 16**, **Tailwind CSS**, and **TypeScript**. Deployable to Vercel in one click.
 
 ## ✨ Features
 

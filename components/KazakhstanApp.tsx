@@ -59,7 +59,7 @@ interface PackingItem {
 // ─── Master Default Itinerary ─────────────────────────────────────────────────
 const DEFAULT_ITINERARY_DATA: DayData[] = [
   {
-    day: 1, date: 'Sun, Sep 11', title: 'Arrival & Almaty City Culture',
+    day: 1, date: 'Sun, Oct 11', title: 'Arrival & Almaty City Culture',
     overnight: 'Almaty City Hotel (Base 1)', location: 'Almaty City',
     activities: [
       { time: '09:50 - 12:30', place: 'Almaty Airport (ALA)', whatToDo: 'Immigration, baggage claim, buy local Beeline/Tele2 SIM, order Yandex XL Taxi to hotel.', mustTry: 'Local SIM card setup at arrivals', lookOutFor: 'Ignore aggressive unlicensed airport taxi drivers; stick strictly to Yandex Go app', kztExpense: 4000, category: 'transit' },
@@ -72,7 +72,7 @@ const DEFAULT_ITINERARY_DATA: DayData[] = [
     ],
   },
   {
-    day: 2, date: 'Mon, Sep 12', title: 'High Altitude Rink, Peaks & Sunset',
+    day: 2, date: 'Mon, Oct 12', title: 'High Altitude Rink, Peaks & Sunset',
     overnight: 'Almaty City Hotel (Base 1)', location: 'Medeu & Shymbulak',
     activities: [
       { time: '09:00 - 10:00', place: 'Dostyk Ave Cafe', whatToDo: 'Breakfast and specialty coffee.', mustTry: 'Syrniki (cottage cheese pancakes) with berry jam', lookOutFor: 'Top up Onay bus card or keep contactless bank card ready', kztExpense: 3000, category: 'food' },
@@ -84,7 +84,7 @@ const DEFAULT_ITINERARY_DATA: DayData[] = [
     ],
   },
   {
-    day: 3, date: 'Tue, Sep 13', title: 'Big Almaty Lake (BAO) & Arasan Baths',
+    day: 3, date: 'Tue, Oct 13', title: 'Big Almaty Lake (BAO) & Arasan Baths',
     overnight: 'Almaty City Hotel (Base 1)', location: 'Big Almaty Lake & City',
     activities: [
       { time: '08:30 - 13:00', place: 'Big Almaty Lake (BAO)', whatToDo: 'Take Yandex Taxi to hydro-station barrier; walk final scenic section up to alpine reservoir.', mustTry: 'Turquoise mountain mirror lake reflections', lookOutFor: 'MANDATORY: Carry original passports (border patrol zone near Kyrgyzstan)', kztExpense: 4000, category: 'sightseeing' },
@@ -94,7 +94,7 @@ const DEFAULT_ITINERARY_DATA: DayData[] = [
     ],
   },
   {
-    day: 4, date: 'Wed, Sep 14', title: 'Guided Tour: Assy Plateau & Turgen',
+    day: 4, date: 'Wed, Oct 14', title: 'Guided Tour: Assy Plateau & Turgen',
     overnight: 'Almaty City Hotel (Base 1)', location: 'Assy Plateau & Turgen Gorge',
     activities: [
       { time: '08:00 - 11:30', place: 'Turgen Gorge', whatToDo: 'Board 4x4 tour vehicle from hotel; drive through Turgen mountain river gorge.', mustTry: 'Bear Waterfall walk', lookOutFor: 'Tour operator drives extreme riverbed off-road sections', kztExpense: 15000, category: 'sightseeing' },
@@ -104,7 +104,7 @@ const DEFAULT_ITINERARY_DATA: DayData[] = [
     ],
   },
   {
-    day: 5, date: 'Thu, Sep 15', title: 'Car Rental → Charyn Canyon → Saty',
+    day: 5, date: 'Thu, Oct 15', title: 'Car Rental → Charyn Canyon → Saty',
     overnight: 'Saty Village Guesthouse (Base 2)', location: 'Charyn & Saty',
     activities: [
       { time: '08:30 - 09:30', place: 'Almaty Car Pickup', whatToDo: 'Pick up 3-day rental minivan/crossover. Leave main suitcases at Almaty hotel storage.', mustTry: 'Inspect rental vehicle tires, spare tire, & jack carefully', lookOutFor: 'Ensure driver has International Driving Permit (IDP)', kztExpense: 10000, category: 'transit' },
@@ -115,7 +115,7 @@ const DEFAULT_ITINERARY_DATA: DayData[] = [
     ],
   },
   {
-    day: 6, date: 'Fri, Sep 16', title: 'Submerged Forest (Kaindy) & Kolsai Lakes',
+    day: 6, date: 'Fri, Oct 16', title: 'Submerged Forest (Kaindy) & Kolsai Lakes',
     overnight: 'Saty Village Guesthouse (Base 2)', location: 'Kaindy & Kolsai Lakes',
     activities: [
       { time: '08:00 - 09:00', place: 'Saty Guesthouse Breakfast', whatToDo: 'Guesthouse home breakfast.', mustTry: 'Fresh farm eggs, homemade berry jams', lookOutFor: 'Pack warm windbreaker jacket', kztExpense: 0, category: 'food' },
@@ -126,7 +126,7 @@ const DEFAULT_ITINERARY_DATA: DayData[] = [
     ],
   },
   {
-    day: 7, date: 'Sat, Sep 17', title: 'Drive to Altyn Emel (Singing Dunes)',
+    day: 7, date: 'Sat, Oct 17', title: 'Drive to Altyn Emel (Singing Dunes)',
     overnight: 'Basshi Village Guesthouse (Base 3)', location: 'Altyn Emel National Park',
     activities: [
       { time: '07:00 - 11:30', place: 'Saty → Basshi Drive', whatToDo: 'Early check-out & drive 250 km via Chilik and Kokpek pass to Basshi village.', mustTry: 'Scenic steppe landscapes', lookOutFor: 'Start early to avoid navigating unlit dirt tracks at night', kztExpense: 4000, category: 'transit' },
@@ -136,7 +136,7 @@ const DEFAULT_ITINERARY_DATA: DayData[] = [
     ],
   },
   {
-    day: 8, date: 'Sun, Sep 18', title: 'Return Almaty, Souvenirs & Airport',
+    day: 8, date: 'Sun, Oct 18', title: 'Return Almaty, Souvenirs & Airport',
     overnight: 'Flight Departure', location: 'Almaty & Departure',
     activities: [
       { time: '07:30 - 11:30', place: 'Basshi → Almaty Highway', whatToDo: 'Drive 255 km back to Almaty via Qonaev (Kapchagay) toll highway.', mustTry: 'Lake Kapchagay view along highway', lookOutFor: 'Refuel at Qazaq Oil or Compass gas station near highway', kztExpense: 3000, category: 'transit' },
@@ -193,8 +193,8 @@ const EXCHANGE_RATES: Record<string, number> = {
   USD: 0.0021, INR: 0.175, EUR: 0.0019, GBP: 0.00165,
 };
 
-const DEPARTURE = new Date('2026-09-11T09:50:00+06:00');
-const TRIP_END   = new Date('2026-09-18T23:59:00+06:00');
+const DEPARTURE = new Date('2026-10-11T09:50:00+06:00');
+const TRIP_END   = new Date('2026-10-18T23:59:00+06:00');
 const CATEGORY_EMOJI: Record<string, string> = {
   sightseeing: '🏔️', food: '🍽️', transit: '🚗', hotel: '🏠',
 };
@@ -474,7 +474,7 @@ export default function KazakhstanApp() {
     const now = new Date();
     const isOnTrip = now >= DEPARTURE && now <= TRIP_END;
     if (isOnTrip) {
-      const dayNum = Math.floor((now.getTime() - new Date('2026-09-11T00:00:00+06:00').getTime()) / 86400000) + 1;
+      const dayNum = Math.floor((now.getTime() - new Date('2026-10-11T00:00:00+06:00').getTime()) / 86400000) + 1;
       if (dayNum >= 1 && dayNum <= 8) setSelectedDay(dayNum);
     }
   }, []);
@@ -588,7 +588,7 @@ export default function KazakhstanApp() {
       {/* ── PRINT LAYOUT (Dynamic) ── */}
       <div className="hidden print:block p-8 bg-white text-black">
         <h1 className="text-2xl font-display font-bold mb-1">Kazakhstan 8-Day Master Itinerary</h1>
-        <p className="text-sm text-gray-500 mb-6">6 Travelers • Sep 11–18, 2026</p>
+        <p className="text-sm text-gray-500 mb-6">6 Travelers • Oct 11–18, 2026</p>
         {itinerary.map(day => (
           <div key={day.day} className="print-card mb-4">
             <h2 className="font-bold text-sm border-b pb-1 mb-2">Day {day.day} — {day.date}: {day.title}</h2>
@@ -618,7 +618,7 @@ export default function KazakhstanApp() {
                 Kazakhstan Trip 🇰🇿
               </h1>
               <p className="text-[11px] text-neu-muted hidden sm:flex items-center gap-1.5 font-medium">
-                <Users className="w-3.5 h-3.5" /> 6 Travelers • Sep 11–18, 2026
+                <Users className="w-3.5 h-3.5" /> 6 Travelers • Oct 11–18, 2026
               </p>
             </div>
           </div>
@@ -711,7 +711,7 @@ export default function KazakhstanApp() {
                 const dayTotal = day.activities.reduce((s, a) => s + a.kztExpense, 0);
                 const pct = Math.round((dayTotal / maxDayKZT) * 100);
                 const isThisToday = isToday && (() => {
-                  const tripStartDate = new Date('2026-09-11');
+                  const tripStartDate = new Date('2026-10-11');
                   const todayOffset = Math.floor((new Date().getTime() - tripStartDate.getTime()) / 86400000) + 1;
                   return day.day === todayOffset;
                 })();
@@ -1160,18 +1160,18 @@ export default function KazakhstanApp() {
               </div>
             </div>
 
-            {/* September Climatology Advice */}
+            {/* October Climatology Advice */}
             <div className="rounded-[32px] neu-flat p-6 sm:p-8 space-y-3">
               <h3 className="font-display font-bold text-base text-[var(--neu-amber)] flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" /> September Climatology & Packing Tips
+                <AlertTriangle className="w-4 h-4" /> October Climatology & Packing Tips
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
                 {[
-                  { place: 'Almaty City', tip: '18–25°C pleasant afternoons, 10–14°C evenings. Light jacket required after 19:00.' },
-                  { place: 'Shymbulak (3200m)', tip: '0–8°C even on bright days. Thermal inner layer and windbreaker are mandatory.' },
-                  { place: 'Charyn Canyon', tip: 'Up to 30°C in the gorge floor. Sunscreen SPF50, sunglasses, and minimum 2L water each.' },
-                  { place: 'Saty Village & Lakes', tip: '12–18°C daytime, drops sub-5°C at night. Mountain air is crisp and unpolluted.' },
-                  { place: 'Altyn Emel Steppe', tip: '22–28°C dry heat. Afternoon gusty winds whip sand on the Singing Dunes.' },
+                  { place: 'Almaty City', tip: '12–18°C pleasant autumn afternoons, 4–8°C evenings. Warm jacket or fleece required after sunset.' },
+                  { place: 'Shymbulak (3200m)', tip: '-2 to 5°C with possible early snow flurries. Thermal inner layer, gloves, and winter windbreaker mandatory.' },
+                  { place: 'Charyn Canyon', tip: '15–22°C crisp and scenic in the gorge. Sunglasses, hat, comfortable hiking shoes, and 1.5L water.' },
+                  { place: 'Saty Village & Lakes', tip: '8–14°C daytime, drops around 0°C or sub-zero at night. Warm beanie, gloves, and layered thermals required.' },
+                  { place: 'Altyn Emel Steppe', tip: '14–20°C dry autumn weather. Afternoon breezes on the Singing Dunes.' },
                 ].map(({ place, tip }) => (
                   <div key={place} className="neu-inset-sm p-3.5 rounded-2xl">
                     <span className="font-bold text-[var(--neu-accent)] block mb-1">{place}</span>

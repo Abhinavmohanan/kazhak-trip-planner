@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Kazakhstan 8-Day Trip Itinerary',
-    description: '6 Travelers • Sep 11–18 • Almaty, Charyn, Saty, Altyn Emel',
+    description: '6 Travelers • Oct 11–18 • Almaty, Charyn, Saty, Altyn Emel',
     type: 'website',
   },
 };
