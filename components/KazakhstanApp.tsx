@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import ActivityEditModal from './ActivityEditModal';
 import {
   Calendar, MapPin, Compass, Car, Luggage, DollarSign, BookOpen,
   CheckSquare, Volume2, ShieldAlert, PhoneCall,
@@ -10,12 +11,13 @@ import {
   Users, Check, RefreshCw, Calculator, Coffee,
   Printer, Wind, Thermometer, Droplets, Map, Timer,
   ChevronDown, ChevronUp, Zap, MoreHorizontal, X,
+  Edit3, Plus, RotateCcw,
 } from 'lucide-react';
 
 const MapTab = dynamic(() => import('./MapTab'), { ssr: false });
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface Activity {
+export interface Activity {
   time: string;
   place: string;
   whatToDo: string;
@@ -25,7 +27,7 @@ interface Activity {
   category: 'sightseeing' | 'food' | 'transit' | 'hotel';
 }
 
-interface DayData {
+export interface DayData {
   day: number;
   date: string;
   title: string;
@@ -53,8 +55,8 @@ interface PackingItem {
   category: string;
 }
 
-// ─── Static Data ──────────────────────────────────────────────────────────────
-const ITINERARY_DATA: DayData[] = [
+// ─── Master Default Itinerary ─────────────────────────────────────────────────
+const DEFAULT_ITINERARY_DATA: DayData[] = [
   {
     day: 1, date: 'Sun, Sep 11', title: 'Arrival & Almaty City Culture',
     overnight: 'Almaty City Hotel (Base 1)', location: 'Almaty City',
@@ -242,7 +244,11 @@ const DEFAULT_CHECKED_IDS = [1, 2, 6];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function KazakhstanApp() {
-  // ── Persisted per-user preferences (localStorage) ────────────────────────────
+  // ── Dynamic Itinerary State (Backend Synced + LocalStorage Cached) ───────────
+  const [itinerary, setItinerary] = useLocalStorage<DayData[]>('kz-shared-itinerary', DEFAULT_ITINERARY_DATA);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'synced' | 'offline'>('idle');
+
+  // ── Persisted User Preferences (localStorage) ────────────────────────────────
   const [isDarkMode,       setIsDarkMode]       = useLocalStorage<boolean>('kz-dark-mode',      true);
   const [activeTab,        setActiveTab]        = useLocalStorage<string>('kz-active-tab',       'itinerary');
   const [categoryFilter,   setCategoryFilter]   = useLocalStorage<string>('kz-category-filter', 'all');
@@ -258,7 +264,155 @@ export default function KazakhstanApp() {
   const [showEmergency,     setShowEmergency]     = useState(false);
   const dayScrollRef = useRef<HTMLDivElement>(null);
 
-  // Sync dark class on HTML root for global styling
+  // ── Edit Modal State ─────────────────────────────────────────────────────────
+  const [editModal, setEditModal] = useState<{
+    isOpen: boolean;
+    activity: Activity;
+    dayNumber: number;
+    activityIndex?: number;
+    isNew?: boolean;
+  }>({
+    isOpen: false,
+    activity: {
+      time: '09:00 - 11:00',
+      place: '',
+      whatToDo: '',
+      mustTry: '',
+      lookOutFor: '',
+      kztExpense: 0,
+      category: 'sightseeing',
+    },
+    dayNumber: 1,
+    isNew: false,
+  });
+
+  // Fetch shared itinerary from backend on initial mount
+  useEffect(() => {
+    async function loadBackendItinerary() {
+      try {
+        const res = await fetch('/api/itinerary');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+            setItinerary(json.data);
+            setSyncStatus('synced');
+          }
+        } else {
+          setSyncStatus('offline');
+        }
+      } catch {
+        setSyncStatus('offline');
+      }
+    }
+    loadBackendItinerary();
+  }, [setItinerary]);
+
+  // Save changes to backend + localStorage
+  const persistItinerary = useCallback(async (updated: DayData[]) => {
+    setItinerary(updated);
+    setSyncStatus('saving');
+    try {
+      const res = await fetch('/api/itinerary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itinerary: updated }),
+      });
+      if (res.ok) {
+        setSyncStatus('synced');
+      } else {
+        setSyncStatus('offline');
+      }
+    } catch {
+      setSyncStatus('offline');
+    }
+  }, [setItinerary]);
+
+  // Reset to original master plan
+  const handleResetItinerary = useCallback(async () => {
+    if (!confirm('Reset all 8 days back to the original master itinerary? Any edits will be restored.')) {
+      return;
+    }
+    setSyncStatus('saving');
+    try {
+      const res = await fetch('/api/itinerary', { method: 'DELETE' });
+      if (res.ok) {
+        const json = await res.json();
+        setItinerary(json.data || DEFAULT_ITINERARY_DATA);
+        setSyncStatus('synced');
+      } else {
+        setItinerary(DEFAULT_ITINERARY_DATA);
+        setSyncStatus('synced');
+      }
+    } catch {
+      setItinerary(DEFAULT_ITINERARY_DATA);
+      setSyncStatus('synced');
+    }
+  }, [setItinerary]);
+
+  // Open edit modal for existing activity
+  const openEditModal = (dayNum: number, act: Activity, actIdx: number) => {
+    setEditModal({
+      isOpen: true,
+      activity: { ...act },
+      dayNumber: dayNum,
+      activityIndex: actIdx,
+      isNew: false,
+    });
+  };
+
+  // Open modal to add a new activity
+  const openAddModal = (dayNum: number) => {
+    setEditModal({
+      isOpen: true,
+      activity: {
+        time: '12:00 - 13:30',
+        place: '',
+        whatToDo: '',
+        mustTry: '',
+        lookOutFor: '',
+        kztExpense: 0,
+        category: 'sightseeing',
+      },
+      dayNumber: dayNum,
+      isNew: true,
+    });
+  };
+
+  // Save activity from modal
+  const handleSaveActivity = (savedAct: Activity, actIdx?: number) => {
+    const dayIdx = itinerary.findIndex(d => d.day === editModal.dayNumber);
+    if (dayIdx === -1) return;
+
+    const updated = [...itinerary];
+    const currentDay = { ...updated[dayIdx] };
+    const currentActs = [...currentDay.activities];
+
+    if (actIdx !== undefined && !editModal.isNew) {
+      currentActs[actIdx] = savedAct;
+    } else {
+      currentActs.push(savedAct);
+    }
+
+    currentDay.activities = currentActs;
+    updated[dayIdx] = currentDay;
+    persistItinerary(updated);
+    setEditModal(prev => ({ ...prev, isOpen: false }));
+  };
+
+  // Delete activity from modal
+  const handleDeleteActivity = (actIdx: number) => {
+    const dayIdx = itinerary.findIndex(d => d.day === editModal.dayNumber);
+    if (dayIdx === -1) return;
+
+    const updated = [...itinerary];
+    const currentDay = { ...updated[dayIdx] };
+    currentDay.activities = currentDay.activities.filter((_, i) => i !== actIdx);
+    updated[dayIdx] = currentDay;
+    persistItinerary(updated);
+    setEditModal(prev => ({ ...prev, isOpen: false }));
+  };
+
+  // Sync dark class on HTML root
   useEffect(() => {
     if (typeof document !== 'undefined') {
       if (isDarkMode) {
@@ -269,7 +423,7 @@ export default function KazakhstanApp() {
     }
   }, [isDarkMode]);
 
-  // Derive full packing items from static data + stored checked IDs
+  // Derive packing items
   const packingItems: PackingItem[] = useMemo(() => PACKING_ITEMS_DATA.map(item => ({
     ...item,
     checked: checkedIds.includes(item.id),
@@ -334,10 +488,10 @@ export default function KazakhstanApp() {
     el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }, [selectedDay]);
 
-  // Derived calculations
-  const currentDayData = ITINERARY_DATA.find(d => d.day === selectedDay)!;
-  const totalTripKZT = useMemo(() => ITINERARY_DATA.reduce((acc, day) => acc + day.activities.reduce((a, act) => a + act.kztExpense, 0), 0), []);
-  const maxDayKZT = useMemo(() => Math.max(...ITINERARY_DATA.map(day => day.activities.reduce((a, act) => a + act.kztExpense, 0))), []);
+  // Dynamic calculations based on reactive editable itinerary
+  const currentDayData = itinerary.find(d => d.day === selectedDay) || itinerary[0] || DEFAULT_ITINERARY_DATA[0];
+  const totalTripKZT = useMemo(() => itinerary.reduce((acc, day) => acc + day.activities.reduce((a, act) => a + act.kztExpense, 0), 0), [itinerary]);
+  const maxDayKZT = useMemo(() => Math.max(1, ...itinerary.map(day => day.activities.reduce((a, act) => a + act.kztExpense, 0))), [itinerary]);
   const totalPerPersonUSD = Math.round(totalTripKZT * EXCHANGE_RATES.USD);
   const currentDayTotal = currentDayData.activities.reduce((s, a) => s + a.kztExpense, 0);
   const budgetPercent = Math.round((currentDayTotal / maxDayKZT) * 100);
@@ -374,7 +528,6 @@ export default function KazakhstanApp() {
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
 
-  // Tabs navigation definitions
   const mobileNavTabs = [
     { id: 'itinerary', label: 'Today',   icon: Calendar  },
     { id: 'map',       label: 'Map',     icon: Map       },
@@ -397,11 +550,11 @@ export default function KazakhstanApp() {
   return (
     <div className={`${isDarkMode ? 'dark' : ''} min-h-screen bg-neu-bg text-neu-text transition-colors duration-300 font-body selection:bg-[var(--neu-accent)] selection:text-white`}>
 
-      {/* ── PRINT LAYOUT (Preserved) ── */}
+      {/* ── PRINT LAYOUT (Dynamic) ── */}
       <div className="hidden print:block p-8 bg-white text-black">
         <h1 className="text-2xl font-display font-bold mb-1">Kazakhstan 8-Day Master Itinerary</h1>
         <p className="text-sm text-gray-500 mb-6">6 Travelers • Sep 11–18, 2026</p>
-        {ITINERARY_DATA.map(day => (
+        {itinerary.map(day => (
           <div key={day.day} className="print-card mb-4">
             <h2 className="font-bold text-sm border-b pb-1 mb-2">Day {day.day} — {day.date}: {day.title}</h2>
             <p className="text-xs text-gray-500 mb-2">📍 {day.location} | 🏠 {day.overnight}</p>
@@ -460,7 +613,7 @@ export default function KazakhstanApp() {
               <Printer className="w-4 h-4" />
             </button>
 
-            {/* Dark / Light Mode Neumorphic Button */}
+            {/* Dark / Light Mode Button */}
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
               className="neu-btn p-2.5 rounded-2xl text-amber-500 hover:text-amber-400 transition-all flex items-center justify-center"
@@ -518,7 +671,7 @@ export default function KazakhstanApp() {
 
             {/* Horizontal Day Selector Bar */}
             <div ref={dayScrollRef} className="flex gap-3 overflow-x-auto scrollbar-none py-2 px-1 -mx-2">
-              {ITINERARY_DATA.map(day => {
+              {itinerary.map(day => {
                 const isSel = selectedDay === day.day;
                 const dayTotal = day.activities.reduce((s, a) => s + a.kztExpense, 0);
                 const pct = Math.round((dayTotal / maxDayKZT) * 100);
@@ -602,28 +755,54 @@ export default function KazakhstanApp() {
                 </div>
               </div>
 
-              {/* Category Filter Pills */}
-              <div className="flex gap-2 pt-2 overflow-x-auto scrollbar-none">
-                {['all', 'sightseeing', 'food', 'transit', 'hotel'].map(cat => {
-                  const isCat = categoryFilter === cat;
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() => setCategoryFilter(cat)}
-                      className={`shrink-0 px-4 py-2 rounded-full text-xs font-medium transition-all ${
-                        isCat
-                          ? 'neu-inset-deep text-[var(--neu-accent)] font-bold ring-1 ring-[var(--neu-accent)]/40'
-                          : 'neu-btn text-neu-muted hover:text-neu-text'
-                      }`}
-                    >
-                      {cat === 'all' ? 'All Activities' : `${CATEGORY_EMOJI[cat]} ${cat.charAt(0).toUpperCase() + cat.slice(1)}`}
-                    </button>
-                  );
-                })}
+              {/* Category Filter Pills & Add Action Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <div className="flex gap-2 overflow-x-auto scrollbar-none py-1">
+                  {['all', 'sightseeing', 'food', 'transit', 'hotel'].map(cat => {
+                    const isCat = categoryFilter === cat;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setCategoryFilter(cat)}
+                        className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                          isCat
+                            ? 'neu-inset-deep text-[var(--neu-accent)] font-bold ring-1 ring-[var(--neu-accent)]/40'
+                            : 'neu-btn text-neu-muted hover:text-neu-text'
+                        }`}
+                      >
+                        {cat === 'all' ? 'All Activities' : `${CATEGORY_EMOJI[cat]} ${cat.charAt(0).toUpperCase() + cat.slice(1)}`}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Edit Controls & Sync Badge */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => openAddModal(currentDayData.day)}
+                    className="neu-btn px-3.5 py-1.5 rounded-2xl text-xs font-bold text-[var(--neu-teal)] flex items-center gap-1.5 active:neu-inset transition-all"
+                    title="Add a new activity to this day"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[3]" /> Add Activity
+                  </button>
+
+                  <div className="neu-inset-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 text-[10px] font-mono text-neu-muted">
+                    <span className={`w-2 h-2 rounded-full ${syncStatus === 'saving' ? 'bg-amber-400 animate-pulse' : syncStatus === 'synced' ? 'bg-[var(--neu-teal)]' : 'bg-slate-400'}`} />
+                    <span>{syncStatus === 'saving' ? 'Saving...' : syncStatus === 'synced' ? 'Synced' : 'Local'}</span>
+                  </div>
+
+                  <button
+                    onClick={handleResetItinerary}
+                    className="neu-btn px-2.5 py-1.5 rounded-2xl text-[10px] font-bold text-neu-muted hover:text-[var(--neu-rose)] active:neu-inset transition-all flex items-center gap-1"
+                    title="Reset all days to master itinerary"
+                  >
+                    <RotateCcw className="w-3 h-3" /> Reset
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Activities List (Accordion-style Neumorphic Cards) */}
+            {/* Activities List (Accordion-style Neumorphic Cards with Edit Trigger) */}
             <div className="space-y-3.5">
               {filteredActivities.map((act, idx) => {
                 const isNow = isToday && idx === nowIdx;
@@ -641,8 +820,8 @@ export default function KazakhstanApp() {
                         : 'neu-flat hover:neu-flat-hover'
                     }`}
                   >
-                    <button
-                      className="w-full p-4 sm:p-5 text-left focus:outline-none"
+                    <div
+                      className="w-full p-4 sm:p-5 text-left cursor-pointer focus:outline-none"
                       onClick={() => setExpandedActivity(isExpanded ? null : idx)}
                     >
                       <div className="flex items-start gap-3.5">
@@ -685,9 +864,23 @@ export default function KazakhstanApp() {
                           </div>
                         </div>
 
-                        {/* Expand Chevron Icon Socket */}
-                        <div className="shrink-0 neu-inset-sm p-1.5 rounded-xl text-neu-muted">
-                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        {/* Edit Button & Chevron Controls */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(currentDayData.day, act, idx);
+                            }}
+                            className="neu-btn p-2 rounded-xl text-[var(--neu-accent)] hover:text-white hover:bg-[var(--neu-accent)] active:neu-inset transition-all"
+                            title="Edit this activity"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+
+                          <div className="neu-inset-sm p-1.5 rounded-xl text-neu-muted">
+                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          </div>
                         </div>
                       </div>
 
@@ -697,7 +890,7 @@ export default function KazakhstanApp() {
                           {act.whatToDo}
                         </p>
                       )}
-                    </button>
+                    </div>
 
                     {/* Expanded Detail Panel */}
                     {isExpanded && (
@@ -726,13 +919,23 @@ export default function KazakhstanApp() {
                             </div>
                           )}
 
-                          {act.kztExpense > 0 && (
-                            <div className="text-xs font-mono text-right pt-2 border-t border-neu-muted/20">
-                              <span className="text-neu-muted">Estimated cost: </span>
-                              <span className="text-[var(--neu-amber)] font-bold">{act.kztExpense.toLocaleString()} KZT</span>
-                              <span className="text-neu-muted"> (${Math.round(act.kztExpense * EXCHANGE_RATES.USD)} USD)</span>
-                            </div>
-                          )}
+                          <div className="flex items-center justify-between pt-2 border-t border-neu-muted/20">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(currentDayData.day, act, idx)}
+                              className="text-xs text-[var(--neu-accent)] font-bold flex items-center gap-1 hover:underline"
+                            >
+                              <Edit3 className="w-3 h-3" /> Edit Activity Details
+                            </button>
+
+                            {act.kztExpense > 0 && (
+                              <div className="text-xs font-mono">
+                                <span className="text-neu-muted">Cost: </span>
+                                <span className="text-[var(--neu-amber)] font-bold">{act.kztExpense.toLocaleString()} KZT</span>
+                                <span className="text-neu-muted"> (${Math.round(act.kztExpense * EXCHANGE_RATES.USD)} USD)</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1109,11 +1312,11 @@ export default function KazakhstanApp() {
               </div>
             </div>
 
-            {/* All 8 Days Budget Bars */}
+            {/* All 8 Days Budget Bars (Dynamically Recalculated) */}
             <div className="rounded-[32px] neu-flat p-6 sm:p-8 space-y-4">
               <h3 className="font-display font-bold text-base">Full 8-Day Estimated Spending Breakdown</h3>
               <div className="space-y-3 pt-1">
-                {ITINERARY_DATA.map(day => {
+                {itinerary.map(day => {
                   const total = day.activities.reduce((s, a) => s + a.kztExpense, 0);
                   const pct = Math.round((total / maxDayKZT) * 100);
                   return (
@@ -1350,6 +1553,18 @@ export default function KazakhstanApp() {
       >
         <PhoneCall className="w-5 h-5 text-white" />
       </button>
+
+      {/* ══════════════ ACTIVITY EDIT MODAL ══════════════ */}
+      <ActivityEditModal
+        isOpen={editModal.isOpen}
+        activity={editModal.activity}
+        dayNumber={editModal.dayNumber}
+        activityIndex={editModal.activityIndex}
+        isNew={editModal.isNew}
+        onSave={handleSaveActivity}
+        onDelete={handleDeleteActivity}
+        onClose={() => setEditModal(prev => ({ ...prev, isOpen: false }))}
+      />
 
       {/* ══════════════ EMERGENCY MODAL ══════════════ */}
       {showEmergency && (
