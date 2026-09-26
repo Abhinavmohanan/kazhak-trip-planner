@@ -190,7 +190,11 @@ const WEATHER_LOCATIONS = [
 ];
 
 const EXCHANGE_RATES: Record<string, number> = {
-  USD: 0.0021, INR: 0.175, EUR: 0.0019, GBP: 0.00165,
+  INR: 0.175, USD: 0.0021, EUR: 0.0019, GBP: 0.00165,
+};
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  INR: '₹', USD: '$', EUR: '€', GBP: '£',
 };
 
 const DEPARTURE = new Date('2026-10-11T09:50:00+06:00');
@@ -254,7 +258,7 @@ export default function KazakhstanApp() {
   const [activeTab,        setActiveTab]        = useLocalStorage<string>('kz-active-tab',       'itinerary');
   const [categoryFilter,   setCategoryFilter]   = useLocalStorage<string>('kz-category-filter', 'all');
   const [phraseFilter,     setPhraseFilter]     = useLocalStorage<string>('kz-phrase-filter',   'all');
-  const [selectedCurrency, setSelectedCurrency] = useLocalStorage<string>('kz-currency',        'USD');
+  const [selectedCurrency, setSelectedCurrency] = useLocalStorage<string>('kz-currency',        'INR');
   const [strategyType,     setStrategyType]     = useLocalStorage<string>('kz-strategy',        'minivan');
   const [kztAmount,        setKztAmount]        = useLocalStorage<number>('kz-kzt-amount',      100000);
   const [checkedIds,       setCheckedIds]       = useLocalStorage<number[]>('kz-checklist',     DEFAULT_CHECKED_IDS);
@@ -527,7 +531,9 @@ export default function KazakhstanApp() {
   const currentDayData = itinerary.find(d => d.day === selectedDay) || itinerary[0] || DEFAULT_ITINERARY_DATA[0];
   const totalTripKZT = useMemo(() => itinerary.reduce((acc, day) => acc + day.activities.reduce((a, act) => a + act.kztExpense, 0), 0), [itinerary]);
   const maxDayKZT = useMemo(() => Math.max(1, ...itinerary.map(day => day.activities.reduce((a, act) => a + act.kztExpense, 0))), [itinerary]);
-  const totalPerPersonUSD = Math.round(totalTripKZT * EXCHANGE_RATES.USD);
+  const currRate = EXCHANGE_RATES[selectedCurrency] || EXCHANGE_RATES.INR;
+  const currSym = CURRENCY_SYMBOLS[selectedCurrency] || '₹';
+  const totalPerPersonConverted = Math.round(totalTripKZT * currRate);
   const currentDayTotal = currentDayData.activities.reduce((s, a) => s + a.kztExpense, 0);
   const budgetPercent = Math.round((currentDayTotal / maxDayKZT) * 100);
 
@@ -781,7 +787,7 @@ export default function KazakhstanApp() {
                   <div className="text-xl font-display font-extrabold text-[var(--neu-amber)] font-mono mt-0.5">
                     {(currentDayTotal / 1000).toFixed(0)}K <span className="text-xs font-normal">KZT</span>
                   </div>
-                  <div className="text-[10px] text-neu-muted mt-0.5">~${Math.round(currentDayTotal * EXCHANGE_RATES.USD)} USD / person</div>
+                  <div className="text-[10px] text-neu-muted mt-0.5">~{currSym}{Math.round(currentDayTotal * currRate).toLocaleString()} {selectedCurrency} / person</div>
                 </div>
               </div>
 
@@ -1073,7 +1079,7 @@ export default function KazakhstanApp() {
                               <div className="text-xs font-mono">
                                 <span className="text-neu-muted">Cost: </span>
                                 <span className="text-[var(--neu-amber)] font-bold">{act.kztExpense.toLocaleString()} KZT</span>
-                                <span className="text-neu-muted"> (${Math.round(act.kztExpense * EXCHANGE_RATES.USD)} USD)</span>
+                                <span className="text-neu-muted"> (~{currSym}{Math.round(act.kztExpense * currRate).toLocaleString()} {selectedCurrency})</span>
                               </div>
                             )}
                           </div>
@@ -1264,7 +1270,7 @@ export default function KazakhstanApp() {
                     ~{Math.round(((strategyType === 'minivan' ? 75000 : strategyType === '2crossovers' ? 60000 : 100000) * 3) / 6).toLocaleString()} KZT
                   </div>
                   <div className="text-[10px] text-neu-muted">
-                    (~${Math.round((((strategyType === 'minivan' ? 75000 : strategyType === '2crossovers' ? 60000 : 100000) * 3) / 6) * EXCHANGE_RATES.USD)} USD)
+                    (~{currSym}{Math.round((((strategyType === 'minivan' ? 75000 : strategyType === '2crossovers' ? 60000 : 100000) * 3) / 6) * currRate).toLocaleString()} {selectedCurrency})
                   </div>
                 </div>
               </div>
@@ -1415,7 +1421,7 @@ export default function KazakhstanApp() {
                 <h2 className="text-lg sm:text-xl font-display font-extrabold flex items-center gap-2 text-[var(--neu-accent)]">
                   <DollarSign className="w-5 h-5" /> Currency Converter & Budget Calculator
                 </h2>
-                <p className="text-xs text-neu-muted mt-1">Rates benchmark: 1 USD ≈ 475 KZT • 1 INR ≈ 5.7 KZT • 1 EUR ≈ 525 KZT</p>
+                <p className="text-xs text-neu-muted mt-1">Rates benchmark: 1 INR ≈ 5.7 KZT (1 KZT ≈ ₹0.175) • 1 USD ≈ 475 KZT • 1 EUR ≈ 525 KZT</p>
               </div>
 
               {/* Converter Controls */}
@@ -1437,17 +1443,17 @@ export default function KazakhstanApp() {
                     onChange={e => setSelectedCurrency(e.target.value)}
                     className="w-full neu-btn rounded-2xl px-4 py-3.5 font-bold text-neu-text outline-none"
                   >
-                    <option value="USD">USD ($)</option>
-                    <option value="INR">INR (₹)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="GBP">GBP (£)</option>
+                    <option value="INR">INR (₹) - Indian Rupee</option>
+                    <option value="USD">USD ($) - US Dollar</option>
+                    <option value="EUR">EUR (€) - Euro</option>
+                    <option value="GBP">GBP (£) - British Pound</option>
                   </select>
                 </div>
 
                 <div className="neu-inset rounded-2xl p-4 flex flex-col justify-center text-center sm:text-right">
                   <div className="text-[10px] text-neu-muted uppercase font-bold tracking-wider">Converted Equivalent</div>
                   <div className="text-2xl font-display font-extrabold text-[var(--neu-teal)] font-mono mt-0.5">
-                    {(kztAmount * EXCHANGE_RATES[selectedCurrency]).toLocaleString(undefined, { maximumFractionDigits: 2 })} {selectedCurrency}
+                    {currSym}{(kztAmount * (EXCHANGE_RATES[selectedCurrency] || EXCHANGE_RATES.INR)).toLocaleString(undefined, { maximumFractionDigits: 2 })} {selectedCurrency}
                   </div>
                 </div>
               </div>
@@ -1482,22 +1488,22 @@ export default function KazakhstanApp() {
                 <div className="neu-inset-sm p-3.5 rounded-2xl">
                   <div className="text-[10px] text-neu-muted uppercase">Per Person Total</div>
                   <div className="text-sm sm:text-base font-bold text-[var(--neu-accent)] mt-0.5">~{totalTripKZT.toLocaleString()} KZT</div>
-                  <div className="text-[10px] text-neu-muted mt-0.5">${totalPerPersonUSD} USD</div>
+                  <div className="text-[10px] text-neu-muted mt-0.5">~{currSym}{totalPerPersonConverted.toLocaleString()} {selectedCurrency}</div>
                 </div>
                 <div className="neu-inset-sm p-3.5 rounded-2xl">
                   <div className="text-[10px] text-neu-muted uppercase">Group Total (×6)</div>
                   <div className="text-sm sm:text-base font-bold text-[var(--neu-teal)] mt-0.5">~{(totalTripKZT * 6).toLocaleString()} KZT</div>
-                  <div className="text-[10px] text-neu-muted mt-0.5">${totalPerPersonUSD * 6} USD</div>
+                  <div className="text-[10px] text-neu-muted mt-0.5">~{currSym}{(totalPerPersonConverted * 6).toLocaleString()} {selectedCurrency}</div>
                 </div>
                 <div className="neu-inset-sm p-3.5 rounded-2xl">
                   <div className="text-[10px] text-neu-muted uppercase">Cash Needed</div>
                   <div className="text-sm sm:text-base font-bold text-[var(--neu-amber)] mt-0.5">~200,000 KZT</div>
-                  <div className="text-[10px] text-neu-muted mt-0.5">Saty/Basshi</div>
+                  <div className="text-[10px] text-neu-muted mt-0.5">Saty/Basshi (~{currSym}{Math.round(200000 * currRate).toLocaleString()})</div>
                 </div>
                 <div className="neu-inset-sm p-3.5 rounded-2xl">
                   <div className="text-[10px] text-neu-muted uppercase">Activities/Passes</div>
                   <div className="text-sm sm:text-base font-bold text-cyan-500 mt-0.5">~20K KZT</div>
-                  <div className="text-[10px] text-neu-muted mt-0.5">Per person</div>
+                  <div className="text-[10px] text-neu-muted mt-0.5">Per person (~{currSym}{Math.round(20000 * currRate).toLocaleString()})</div>
                 </div>
               </div>
             </div>
@@ -1640,12 +1646,12 @@ export default function KazakhstanApp() {
                   onChange={e => setSelectedCurrency(e.target.value)}
                   className="neu-btn p-3 rounded-2xl font-bold text-sm outline-none"
                 >
-                  <option>USD</option><option>INR</option><option>EUR</option><option>GBP</option>
+                  <option>INR</option><option>USD</option><option>EUR</option><option>GBP</option>
                 </select>
               </div>
               <div className="neu-inset p-3.5 rounded-2xl text-center">
                 <div className="text-xl font-display font-extrabold text-[var(--neu-teal)] font-mono">
-                  {(kztAmount * EXCHANGE_RATES[selectedCurrency]).toLocaleString(undefined, { maximumFractionDigits: 2 })} {selectedCurrency}
+                  {currSym}{(kztAmount * (EXCHANGE_RATES[selectedCurrency] || EXCHANGE_RATES.INR)).toLocaleString(undefined, { maximumFractionDigits: 2 })} {selectedCurrency}
                 </div>
               </div>
             </div>
