@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import ActivityEditModal from './ActivityEditModal';
 import DayEditModal from './DayEditModal';
+import planAJson from '@/data/itinerary.json';
+import planBJson from '@/data/itinerary_plan_b.json';
 import {
   Calendar, MapPin, Compass, Car, Luggage, DollarSign, BookOpen,
   CheckSquare, Volume2, ShieldAlert, PhoneCall,
@@ -12,7 +14,7 @@ import {
   Users, Check, RefreshCw, Calculator, Coffee,
   Printer, Wind, Thermometer, Droplets, Map, Timer,
   ChevronDown, ChevronUp, Zap, MoreHorizontal, X,
-  Edit3, Plus, RotateCcw, GripVertical, ArrowUp, ArrowDown,
+  Edit3, Plus, RotateCcw, GripVertical, ArrowUp, ArrowDown, Sparkles
 } from 'lucide-react';
 
 const MapTab = dynamic(() => import('./MapTab'), { ssr: false });
@@ -56,99 +58,10 @@ interface PackingItem {
   category: string;
 }
 
-// ─── Master Default Itinerary ─────────────────────────────────────────────────
-const DEFAULT_ITINERARY_DATA: DayData[] = [
-  {
-    day: 1, date: 'Sun, Oct 11', title: 'Arrival & Almaty City Culture',
-    overnight: 'Almaty City Hotel (Base 1)', location: 'Almaty City',
-    activities: [
-      { time: '09:50 - 12:30', place: 'Almaty Airport (ALA)', whatToDo: 'Immigration, baggage claim, buy local Beeline/Tele2 SIM, order Yandex XL Taxi to hotel.', mustTry: 'Local SIM card setup at arrivals', lookOutFor: 'Ignore aggressive unlicensed airport taxi drivers; stick strictly to Yandex Go app', kztExpense: 4000, category: 'transit' },
-      { time: '12:30 - 13:30', place: 'City Hotel', whatToDo: 'Hotel check-in or drop luggage in storage.', mustTry: 'Request early check-in or store bags', lookOutFor: 'Keep passports handy', kztExpense: 0, category: 'hotel' },
-      { time: '13:30 - 15:00', place: 'Navat / Tandir Restaurant', whatToDo: 'Traditional Kazakh & Central Asian kick-off lunch.', mustTry: 'Boshu Lagman (hand-pulled noodles) & Manti', lookOutFor: 'Portion sizes are generous for sharing', kztExpense: 4500, category: 'food' },
-      { time: '15:30 - 17:00', place: 'Green Bazaar (Zelyony Bazar)', whatToDo: 'Explore historic market stalls, spices, meats, and dried fruits.', mustTry: 'Kurt (salted cheese balls), local mountain honey, dried apricots', lookOutFor: 'Closed on Mondays! Cash only for stall vendors', kztExpense: 3000, category: 'sightseeing' },
-      { time: '17:30 - 18:30', place: 'Panfilov Park & Zenkov Cathedral', whatToDo: 'Walk through leafy park and visit the famous 19th-century wooden cathedral built without nails.', mustTry: 'Intricate wooden architecture photo spots', lookOutFor: 'Modest dress code inside cathedral', kztExpense: 0, category: 'sightseeing' },
-      { time: '18:30 - 20:00', place: 'Arbat Pedestrian Street', whatToDo: 'Evening promenade, street musicians, local art galleries.', mustTry: 'Street performances & artisan crafts', lookOutFor: 'Watch out for cyclists on pedestrian paths', kztExpense: 1500, category: 'sightseeing' },
-      { time: '20:00 - 22:00', place: 'City Center Dinner', whatToDo: 'Dinner & Craft drinks / Georgian feast.', mustTry: "Shashlik, Khachapuri or local craft beer at Harat's", lookOutFor: 'Card payments widely accepted in Almaty city', kztExpense: 6000, category: 'food' },
-    ],
-  },
-  {
-    day: 2, date: 'Mon, Oct 12', title: 'High Altitude Rink, Peaks & Sunset',
-    overnight: 'Almaty City Hotel (Base 1)', location: 'Medeu & Shymbulak',
-    activities: [
-      { time: '09:00 - 10:00', place: 'Dostyk Ave Cafe', whatToDo: 'Breakfast and specialty coffee.', mustTry: 'Syrniki (cottage cheese pancakes) with berry jam', lookOutFor: 'Top up Onay bus card or keep contactless bank card ready', kztExpense: 3000, category: 'food' },
-      { time: '10:00 - 11:30', place: 'Medeu Speed Skating Rink', whatToDo: 'Ride public Bus No. 12 from Dostyk Ave (~40 mins) to Medeu valley.', mustTry: 'Panoramas of highest ice rink in the world', lookOutFor: 'Bus can get crowded on pleasant mornings', kztExpense: 200, category: 'transit' },
-      { time: '12:00 - 15:30', place: 'Shymbulak & Talgar Pass (3200m)', whatToDo: 'Ride 3-stage cable car up to Talgar Pass for high mountain peaks.', mustTry: 'Chalet dining at 3200 Cafe, crisp glacier air', lookOutFor: 'Temperatures are 10°C colder than city; wear extra thermal layer', kztExpense: 12000, category: 'sightseeing' },
-      { time: '16:00 - 17:00', place: 'Return to City', whatToDo: 'Take bus or Yandex Taxi back down Dostyk Avenue.', mustTry: 'Rest legs on transit', lookOutFor: 'Afternoon traffic peaks around 17:30', kztExpense: 1000, category: 'transit' },
-      { time: '17:00 - 19:30', place: 'Kok Tobe Hilltop', whatToDo: 'Aerial cable car from Dostyk Ave to Kok Tobe park for sunset over Almaty.', mustTry: 'Almaty Tower view & sunset photos', lookOutFor: 'Cable car ticket ~1,250 KZT roundtrip', kztExpense: 1250, category: 'sightseeing' },
-      { time: '20:00 - 22:00', place: 'City Center Dinner', whatToDo: 'Dinner and drinks.', mustTry: 'Traditional Kazakh Beshbarmak noodle plate', lookOutFor: 'Hydrate well after altitude', kztExpense: 6500, category: 'food' },
-    ],
-  },
-  {
-    day: 3, date: 'Tue, Oct 13', title: 'Big Almaty Lake (BAO) & Arasan Baths',
-    overnight: 'Almaty City Hotel (Base 1)', location: 'Big Almaty Lake & City',
-    activities: [
-      { time: '08:30 - 13:00', place: 'Big Almaty Lake (BAO)', whatToDo: 'Take Yandex Taxi to hydro-station barrier; walk final scenic section up to alpine reservoir.', mustTry: 'Turquoise mountain mirror lake reflections', lookOutFor: 'MANDATORY: Carry original passports (border patrol zone near Kyrgyzstan)', kztExpense: 4000, category: 'sightseeing' },
-      { time: '13:00 - 15:00', place: 'Almarasan Gorge', whatToDo: 'Descend to riverside restaurants in Almarasan canyon.', mustTry: 'Freshly grilled mountain trout & lamb shashlik', lookOutFor: 'Check trout price per 100 grams before ordering', kztExpense: 6000, category: 'food' },
-      { time: '16:00 - 18:30', place: 'Arasan Bathhouse', whatToDo: 'Historic Soviet/Kazakh public bathhouse recovery session.', mustTry: 'Venik (oak leaf bundle) sauna massage & cold plunge pool', lookOutFor: 'Gender-segregated; bring rubber slippers and towel', kztExpense: 3500, category: 'sightseeing' },
-      { time: '19:30 - 21:30', place: 'City Center Dinner', whatToDo: 'Relaxed city dinner.', mustTry: 'Kazakh horse meat delicacies (Kazy) or Georgian wine', lookOutFor: 'Early night before early morning tour', kztExpense: 5500, category: 'food' },
-    ],
-  },
-  {
-    day: 4, date: 'Wed, Oct 14', title: 'Guided Tour: Assy Plateau & Turgen',
-    overnight: 'Almaty City Hotel (Base 1)', location: 'Assy Plateau & Turgen Gorge',
-    activities: [
-      { time: '08:00 - 11:30', place: 'Turgen Gorge', whatToDo: 'Board 4x4 tour vehicle from hotel; drive through Turgen mountain river gorge.', mustTry: 'Bear Waterfall walk', lookOutFor: 'Tour operator drives extreme riverbed off-road sections', kztExpense: 15000, category: 'sightseeing' },
-      { time: '11:30 - 15:30', place: 'Assy Plateau & Soviet Observatory', whatToDo: 'Explore vast high-altitude steppe (2700m), rivers, nomads, and lone Soviet observatory dome.', mustTry: 'Nomadic yurt photo ops & outdoor group picnic', lookOutFor: 'Zero cellular network on plateau; pack thermal jacket', kztExpense: 0, category: 'sightseeing' },
-      { time: '15:30 - 18:30', place: 'Return Drive to Almaty', whatToDo: 'Scenic descent back down Turgen valley to city.', mustTry: 'Mountain honey roadside stalls', lookOutFor: 'Keep camera ready for wild horse herds', kztExpense: 1000, category: 'transit' },
-      { time: '19:00 - 21:30', place: 'Almaty City Dinner', whatToDo: 'Hotel drop-off; evening dinner in Almaty.', mustTry: 'Craft burger or Italian dinner at Parmigiano', lookOutFor: 'Rest well before 3-day road trip tomorrow', kztExpense: 5000, category: 'food' },
-    ],
-  },
-  {
-    day: 5, date: 'Thu, Oct 15', title: 'Car Rental → Charyn Canyon → Saty',
-    overnight: 'Saty Village Guesthouse (Base 2)', location: 'Charyn & Saty',
-    activities: [
-      { time: '08:30 - 09:30', place: 'Almaty Car Pickup', whatToDo: 'Pick up 3-day rental minivan/crossover. Leave main suitcases at Almaty hotel storage.', mustTry: 'Inspect rental vehicle tires, spare tire, & jack carefully', lookOutFor: 'Ensure driver has International Driving Permit (IDP)', kztExpense: 10000, category: 'transit' },
-      { time: '09:30 - 13:30', place: 'Highway A3 / Baiseit Village', whatToDo: 'Drive ~200 km to Charyn Canyon entrance. Stop at Baiseit village market.', mustTry: 'Fresh hot Tandir Samsa at Baiseit roadside stall', lookOutFor: 'Observe speed limits (50 km/h in villages, traffic police enforce with radar)', kztExpense: 1000, category: 'transit' },
-      { time: '13:30 - 16:30', place: 'Charyn Canyon (Valley of Castles)', whatToDo: 'Hike 2.5 km down dramatic red rock canyon gorge down to Charyn River.', mustTry: 'Eco-bus option back uphill if exhausted', lookOutFor: 'Intense midday heat; entry fee ~850 KZT/person; carry minimum 2L water', kztExpense: 850, category: 'sightseeing' },
-      { time: '16:30 - 17:30', place: 'Black Canyon', whatToDo: '20-min photo stop directly along main highway overlook.', mustTry: 'Sheer vertical canyon cliff view down to rushing river', lookOutFor: 'No barrier edge; stay safe while taking photos', kztExpense: 0, category: 'sightseeing' },
-      { time: '18:30 - 21:00', place: 'Saty Village Guesthouse', whatToDo: 'Arrive at Saty family guesthouse. Check-in and enjoy hearty homemade dinner.', mustTry: 'Baursak (fried dough), fresh sheep/cow cheese, hot mountain tea', lookOutFor: 'Cash only in Saty village (KZT); no ATM or card readers', kztExpense: 8000, category: 'hotel' },
-    ],
-  },
-  {
-    day: 6, date: 'Fri, Oct 16', title: 'Submerged Forest (Kaindy) & Kolsai Lakes',
-    overnight: 'Saty Village Guesthouse (Base 2)', location: 'Kaindy & Kolsai Lakes',
-    activities: [
-      { time: '08:00 - 09:00', place: 'Saty Guesthouse Breakfast', whatToDo: 'Guesthouse home breakfast.', mustTry: 'Fresh farm eggs, homemade berry jams', lookOutFor: 'Pack warm windbreaker jacket', kztExpense: 0, category: 'food' },
-      { time: '09:00 - 13:00', place: 'Lake Kaindy', whatToDo: 'Hire local Soviet UAZ 4x4 Bukhanka van from Saty. Hike/horse ride to submerged birch tree forest lake.', mustTry: 'Spruce trees standing upright in turquoise water', lookOutFor: 'DO NOT drive rental car here (riverbed tracks break standard cars). Eco-fee ~850 KZT', kztExpense: 3500, category: 'sightseeing' },
-      { time: '13:00 - 14:30', place: 'Saty Village Lunch', whatToDo: 'Return to village for hot guesthouse lunch.', mustTry: 'Traditional Lagman or Kuurdak', lookOutFor: 'Rest up before afternoon lake stroll', kztExpense: 3000, category: 'food' },
-      { time: '15:00 - 18:30', place: 'Lower Kolsai Lake', whatToDo: 'Drive 20 mins on smooth asphalt road to Lower Kolsai Lake.', mustTry: 'Wooden rowboat rental on turquoise alpine lake', lookOutFor: 'Rowboat ~5000 KZT / 30 mins; late afternoon golden hour lighting', kztExpense: 3000, category: 'sightseeing' },
-      { time: '19:30 - 21:30', place: 'Saty Village — Stargazing', whatToDo: 'Dinner and stargazing in guesthouse courtyard.', mustTry: 'Unpolluted mountain night sky views', lookOutFor: 'Night temps drop fast', kztExpense: 0, category: 'hotel' },
-    ],
-  },
-  {
-    day: 7, date: 'Sat, Oct 17', title: 'Drive to Altyn Emel (Singing Dunes)',
-    overnight: 'Basshi Village Guesthouse (Base 3)', location: 'Altyn Emel National Park',
-    activities: [
-      { time: '07:00 - 11:30', place: 'Saty → Basshi Drive', whatToDo: 'Early check-out & drive 250 km via Chilik and Kokpek pass to Basshi village.', mustTry: 'Scenic steppe landscapes', lookOutFor: 'Start early to avoid navigating unlit dirt tracks at night', kztExpense: 4000, category: 'transit' },
-      { time: '12:00 - 13:00', place: 'Basshi Village Office', whatToDo: 'Register vehicle and pay entry tickets at Altyn Emel National Park headquarters.', mustTry: 'Local village lunch at Basshi', lookOutFor: 'Keep park permit receipt visible on car dashboard', kztExpense: 1500, category: 'transit' },
-      { time: '13:30 - 17:00', place: 'Singing Dunes (Altyn Emel)', whatToDo: 'Drive 1-hour washboard gravel track to Singing Dunes. Climb dune ridge and slide down.', mustTry: 'Hear the loud organ-like hum produced by vibrating sand', lookOutFor: 'Cap driving speed at 40 km/h on gravel; wear sunglasses, hat, and sunscreen', kztExpense: 0, category: 'sightseeing' },
-      { time: '18:00 - 21:00', place: 'Basshi Village Guesthouse', whatToDo: 'Check-in to local Basshi guesthouse. Dinner and rest.', mustTry: 'Homestyle Kazakh nomadic hospitality', lookOutFor: 'Cash for guesthouse stay', kztExpense: 8000, category: 'hotel' },
-    ],
-  },
-  {
-    day: 8, date: 'Sun, Oct 18', title: 'Return Almaty, Souvenirs & Airport',
-    overnight: 'Flight Departure', location: 'Almaty & Departure',
-    activities: [
-      { time: '07:30 - 11:30', place: 'Basshi → Almaty Highway', whatToDo: 'Drive 255 km back to Almaty via Qonaev (Kapchagay) toll highway.', mustTry: 'Lake Kapchagay view along highway', lookOutFor: 'Refuel at Qazaq Oil or Compass gas station near highway', kztExpense: 3000, category: 'transit' },
-      { time: '12:00 - 12:30', place: 'Rental Car Return', whatToDo: 'Return rental car (clean interior, full fuel tank).', mustTry: 'Retrieve stored main suitcases from hotel', lookOutFor: 'Rental drop-off inspection', kztExpense: 0, category: 'transit' },
-      { time: '12:30 - 14:00', place: 'Panfilov St Cafe', whatToDo: 'Lunch along pedestrian avenue.', mustTry: 'Craft coffee & Central Asian baked pastries', lookOutFor: 'Relaxed urban vibe', kztExpense: 4000, category: 'food' },
-      { time: '14:00 - 16:00', place: 'Central State Museum', whatToDo: 'Explore Kazakh nomadic history and archaeological treasures.', mustTry: 'Golden Man (Altyn Adam) ancient warrior exhibit', lookOutFor: 'Museum ticket ~1,000 KZT', kztExpense: 1000, category: 'sightseeing' },
-      { time: '16:00 - 17:30', place: 'Rakhat Chocolate Factory', whatToDo: 'Souvenir shopping at official factory outlet on Zenkov Street.', mustTry: 'Signature blue-wrapped "Kazakhstan" chocolate bars and tins', lookOutFor: 'Factory store offers best wholesale prices', kztExpense: 5000, category: 'sightseeing' },
-      { time: '18:00 - 19:30', place: 'Farewell Dinner', whatToDo: 'Final celebratory dinner in Almaty.', mustTry: 'Gosti or Kishlak farewell feast', lookOutFor: 'Allow 45 mins transit time to airport', kztExpense: 6000, category: 'food' },
-      { time: '20:00 - 22:30', place: 'Almaty Airport (ALA)', whatToDo: 'Yandex XL Taxi to airport; check-in 3 hours prior to departure.', mustTry: 'Safe journey home!', lookOutFor: 'Ensure no liquids or souvenirs exceed hand baggage limits', kztExpense: 4000, category: 'transit' },
-    ],
-  },
-];
+// ─── Master Default Itineraries ───────────────────────────────────────────────
+const DEFAULT_PLAN_A_DATA: DayData[] = planAJson as DayData[];
+const DEFAULT_PLAN_B_DATA: DayData[] = planBJson as DayData[];
+const DEFAULT_ITINERARY_DATA: DayData[] = DEFAULT_PLAN_B_DATA;
 
 const PHRASES = [
   { cat: 'Greetings', ru: 'Здравствуйте', trans: 'Zdrav-stvuy-te', mean: 'Hello (Formal)' },
@@ -169,7 +82,7 @@ const PHRASES = [
   { cat: 'Emergency', ru: 'Мне нужен врач', trans: 'Mne noo-zhen vrach', mean: 'I need a doctor' },
 ];
 
-const ROUTE_LEGS = [
+const ROUTE_LEGS_PLAN_A = [
   { from: 'Almaty', to: 'Medeu Rink', dist: '18 km', time: '35-45 min', road: 'Paved (Bus 12 / Yandex)' },
   { from: 'Almaty', to: 'Big Almaty Lake', dist: '28 km', time: '1 hr + 1.5 hr hike', road: 'Paved to barrier, then walk' },
   { from: 'Almaty', to: 'Assy Plateau', dist: '100 km', time: '3.5–4 hrs', road: 'Paved → steep 4x4 track' },
@@ -180,6 +93,23 @@ const ROUTE_LEGS = [
   { from: 'Saty', to: 'Basshi (Altyn Emel)', dist: '250 km', time: '4.5 hrs', road: 'Paved via Chilik & Kokpek pass' },
   { from: 'Basshi', to: 'Singing Dunes', dist: '90 km RT', time: '2 hrs total', road: 'Washboard gravel (max 40 km/h)' },
   { from: 'Basshi', to: 'Almaty', dist: '255 km', time: '3.5–4 hrs', road: 'Paved A3 via Qonaev tollroad' },
+];
+
+const ROUTE_LEGS_PLAN_B = [
+  { from: 'Almaty', to: 'Medeu Rink', dist: '18 km', time: '35-45 min', road: 'Paved (Bus 12 / Yandex)' },
+  { from: 'Almaty', to: 'Issyk Lake', dist: '80 km', time: '1.5 hrs', road: 'Paved scenic foothill road' },
+  { from: 'Issyk Lake', to: 'Turgen Gorge', dist: '45 km', time: '1 hr', road: 'Paved mountain gorge road' },
+  { from: 'Turgen Gorge', to: 'Chundzha Hot Springs', dist: '165 km', time: '2.5 hrs', road: 'Kulja tract highway (A351)' },
+  { from: 'Chundzha', to: 'Charyn Canyon', dist: '85 km', time: '1 hr 15 min', road: 'Paved steppe highway + 10 km gravel' },
+  { from: 'Charyn Canyon', to: 'Black Canyon', dist: '25 km', time: '25 min', road: 'Paved regional highway' },
+  { from: 'Black Canyon', to: 'Saty Village', dist: '60 km', time: '1 hr', road: 'Paved mountain scenic road' },
+  { from: 'Saty', to: 'Lake Kaindy', dist: '15 km', time: '45 min', road: '⚠️ Extreme riverbed — use UAZ van!' },
+  { from: 'Saty', to: 'Lower Kolsai', dist: '15 km', time: '20 min', road: 'Smooth paved asphalt' },
+  { from: 'Saty', to: 'Basshi (Altyn Emel)', dist: '250 km', time: '4.5 hrs', road: 'Paved via Chilik & Kokpek pass' },
+  { from: 'Basshi', to: 'Singing Dunes', dist: '90 km RT', time: '2 hrs total', road: 'Washboard gravel (max 40 km/h)' },
+  { from: 'Basshi', to: 'Aktau Chalk Mountains', dist: '90 km RT', time: '3 hrs total', road: 'Washboard gravel / clay track' },
+  { from: 'Basshi', to: 'Almaty (via Qonaev)', dist: '255 km', time: '3.5–4 hrs', road: 'Paved A3 tollroad' },
+  { from: 'Almaty', to: 'Big Almaty Lake (BAO)', dist: '28 km', time: '1 hr', road: 'Authorized eco-shuttle only' },
 ];
 
 const WEATHER_LOCATIONS = [
@@ -249,9 +179,21 @@ const DEFAULT_CHECKED_IDS = [1, 2, 6];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function KazakhstanApp() {
-  // ── Dynamic Itinerary State (Backend Synced + LocalStorage Cached) ───────────
-  const [itinerary, setItinerary] = useLocalStorage<DayData[]>('kz-shared-itinerary', DEFAULT_ITINERARY_DATA);
+  // ── Dynamic Itinerary State (Dual Plan Support + LocalStorage Cached) ─────────
+  const [activePlanId, setActivePlanId] = useLocalStorage<'plan_a' | 'plan_b'>('kz-active-plan', 'plan_b');
+  const [planAItinerary, setPlanAItinerary] = useLocalStorage<DayData[]>('kz-itinerary-plan-a', DEFAULT_PLAN_A_DATA);
+  const [planBItinerary, setPlanBItinerary] = useLocalStorage<DayData[]>('kz-itinerary-plan-b', DEFAULT_PLAN_B_DATA);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'synced' | 'offline'>('idle');
+
+  // Currently active plan's live itinerary
+  const itinerary = activePlanId === 'plan_b' ? planBItinerary : planAItinerary;
+  const setItinerary = useCallback((updater: DayData[] | ((prev: DayData[]) => DayData[])) => {
+    if (activePlanId === 'plan_b') {
+      setPlanBItinerary(updater);
+    } else {
+      setPlanAItinerary(updater);
+    }
+  }, [activePlanId, setPlanAItinerary, setPlanBItinerary]);
 
   // ── Persisted User Preferences (localStorage) ────────────────────────────────
   const [isDarkMode,       setIsDarkMode]       = useLocalStorage<boolean>('kz-dark-mode',      true);
@@ -294,26 +236,33 @@ export default function KazakhstanApp() {
     isNew: false,
   });
 
-  // Fetch shared itinerary from backend on initial mount
+  // Fetch shared itineraries from backend on initial mount
   useEffect(() => {
     async function loadBackendItinerary() {
       try {
-        const res = await fetch('/api/itinerary');
-        if (res.ok) {
-          const json = await res.json();
-          if (json.data && Array.isArray(json.data) && json.data.length > 0) {
-            setItinerary(json.data);
-            setSyncStatus('synced');
+        const [resA, resB] = await Promise.all([
+          fetch('/api/itinerary?plan=plan_a'),
+          fetch('/api/itinerary?plan=plan_b'),
+        ]);
+        if (resA.ok) {
+          const jsonA = await resA.json();
+          if (jsonA.data && Array.isArray(jsonA.data) && jsonA.data.length > 0) {
+            setPlanAItinerary(jsonA.data);
           }
-        } else {
-          setSyncStatus('offline');
         }
+        if (resB.ok) {
+          const jsonB = await resB.json();
+          if (jsonB.data && Array.isArray(jsonB.data) && jsonB.data.length > 0) {
+            setPlanBItinerary(jsonB.data);
+          }
+        }
+        setSyncStatus('synced');
       } catch {
         setSyncStatus('offline');
       }
     }
     loadBackendItinerary();
-  }, [setItinerary]);
+  }, [setPlanAItinerary, setPlanBItinerary]);
 
   // Save changes to backend + localStorage
   const persistItinerary = useCallback(async (updated: DayData[]) => {
@@ -323,7 +272,7 @@ export default function KazakhstanApp() {
       const res = await fetch('/api/itinerary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itinerary: updated }),
+        body: JSON.stringify({ itinerary: updated, plan: activePlanId }),
       });
       if (res.ok) {
         setSyncStatus('synced');
@@ -333,29 +282,32 @@ export default function KazakhstanApp() {
     } catch {
       setSyncStatus('offline');
     }
-  }, [setItinerary]);
+  }, [activePlanId, setItinerary]);
 
   // Reset to original master plan
   const handleResetItinerary = useCallback(async () => {
-    if (!confirm('Reset all 8 days back to the original master itinerary? Any edits will be restored.')) {
+    const isPlanB = activePlanId === 'plan_b';
+    const planName = isPlanB ? 'Plan B (Thermal Springs & Autumn Loop)' : 'Plan A (Classical Loop)';
+    if (!confirm(`Reset all 8 days of ${planName} back to the original master itinerary? Any edits on this plan will be restored.`)) {
       return;
     }
     setSyncStatus('saving');
     try {
-      const res = await fetch('/api/itinerary', { method: 'DELETE' });
+      const res = await fetch(`/api/itinerary?plan=${activePlanId}`, { method: 'DELETE' });
       if (res.ok) {
         const json = await res.json();
-        setItinerary(json.data || DEFAULT_ITINERARY_DATA);
+        const fallback = isPlanB ? DEFAULT_PLAN_B_DATA : DEFAULT_PLAN_A_DATA;
+        setItinerary(json.data || fallback);
         setSyncStatus('synced');
       } else {
-        setItinerary(DEFAULT_ITINERARY_DATA);
+        setItinerary(isPlanB ? DEFAULT_PLAN_B_DATA : DEFAULT_PLAN_A_DATA);
         setSyncStatus('synced');
       }
     } catch {
-      setItinerary(DEFAULT_ITINERARY_DATA);
+      setItinerary(isPlanB ? DEFAULT_PLAN_B_DATA : DEFAULT_PLAN_A_DATA);
       setSyncStatus('synced');
     }
-  }, [setItinerary]);
+  }, [activePlanId, setItinerary]);
 
   // Open edit modal for existing activity
   const openEditModal = (dayNum: number, act: Activity, actIdx: number) => {
@@ -529,6 +481,8 @@ export default function KazakhstanApp() {
 
   // Dynamic calculations based on reactive editable itinerary
   const currentDayData = itinerary.find(d => d.day === selectedDay) || itinerary[0] || DEFAULT_ITINERARY_DATA[0];
+  const routeLegs = activePlanId === 'plan_b' ? ROUTE_LEGS_PLAN_B : ROUTE_LEGS_PLAN_A;
+  const rentalDays = activePlanId === 'plan_b' ? 6 : 3;
   const totalTripKZT = useMemo(() => itinerary.reduce((acc, day) => acc + day.activities.reduce((a, act) => a + act.kztExpense, 0), 0), [itinerary]);
   const maxDayKZT = useMemo(() => Math.max(1, ...itinerary.map(day => day.activities.reduce((a, act) => a + act.kztExpense, 0))), [itinerary]);
   const currRate = EXCHANGE_RATES[selectedCurrency] || EXCHANGE_RATES.INR;
@@ -665,6 +619,50 @@ export default function KazakhstanApp() {
           </div>
         </div>
 
+        {/* ── 1-TAP PLAN SWITCHER BAR (Navbar Level — Desktop & Mobile) ── */}
+        <div className="border-t border-neu-muted/15 px-4 sm:px-6 py-2 bg-neu-bg/70 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2.5 flex-wrap">
+            <div className="flex items-center gap-1.5 text-xs font-display font-bold text-neu-muted">
+              <Zap className="w-3.5 h-3.5 text-[var(--neu-accent)] animate-pulse" />
+              <span className="hidden sm:inline">Active Plan:</span>
+              <span className="sm:hidden">Plan:</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 neu-inset p-1 rounded-2xl flex-1 sm:flex-initial max-w-full">
+              <button
+                type="button"
+                onClick={() => setActivePlanId('plan_a')}
+                className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  activePlanId === 'plan_a'
+                    ? 'neu-flat bg-neu-bg text-[var(--neu-accent)] shadow-sm ring-1 ring-[var(--neu-accent)]/30 font-extrabold'
+                    : 'text-neu-muted hover:text-neu-text'
+                }`}
+              >
+                <span>🏔️</span>
+                <span>Plan A: Classical Loop</span>
+                <span className="hidden lg:inline text-[10px] font-normal text-neu-muted">(Assy Base)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActivePlanId('plan_b')}
+                className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  activePlanId === 'plan_b'
+                    ? 'neu-flat bg-neu-bg text-[var(--neu-accent)] shadow-sm ring-1 ring-[var(--neu-accent)]/40 font-extrabold'
+                    : 'text-neu-muted hover:text-neu-text'
+                }`}
+              >
+                <span>♨️</span>
+                <span>Plan B: Hot Springs Loop</span>
+                <span className="hidden lg:inline text-[10px] font-normal text-neu-muted">(Chundzha)</span>
+                <span className="text-[9px] bg-gradient-to-r from-amber-500 to-rose-500 text-white px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider shadow-sm">
+                  Recommended
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Desktop Tab Bar */}
         <div className="hidden md:flex max-w-7xl mx-auto px-6 py-2 gap-1.5 overflow-x-auto text-xs font-medium scrollbar-none">
           {desktopTabs.map(tab => {
@@ -709,6 +707,38 @@ export default function KazakhstanApp() {
                 </div>
               </div>
             )}
+
+            {/* Plan Info & Quick Switch Banner */}
+            <div className="neu-flat rounded-[28px] p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-l-4 border-[var(--neu-accent)]">
+              <div className="min-w-0 space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xl shrink-0">{activePlanId === 'plan_b' ? '♨️' : '🏔️'}</span>
+                  <span className="font-display font-extrabold text-sm sm:text-base text-neu-text">
+                    {activePlanId === 'plan_b' ? 'Plan B: Thermal Springs & Scenic Loop (Autumn Focus)' : 'Plan A: Classical Almaty Base + 3-Day Loop'}
+                  </span>
+                  <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-[var(--neu-accent)]/15 text-[var(--neu-accent)]">
+                    {activePlanId === 'plan_b' ? 'Recommended for Mid-October' : 'Standard 3-Day Car Rental'}
+                  </span>
+                </div>
+                <p className="text-xs text-neu-muted leading-relaxed">
+                  {activePlanId === 'plan_b'
+                    ? '6-day car rental • Issyk Lake & Turgen Hike on Day 3 • Chundzha hot mineral springs soak • Charyn Canyon on Day 4 morning • Saty homestay Days 4–5 • Singing Dunes Day 6 • Aktau Mountains & Arasan Baths Day 7 • Big Almaty Lake on Day 8.'
+                    : '4 nights in Almaty City base • Medeu & Shymbulak Day 2 • Big Almaty Lake Day 3 • Assy Plateau 4x4 guided tour Day 4 • 3-day rental car pickup Day 5 for Charyn & Saty • Kaindy & Kolsai Day 6 • Singing Dunes Day 7.'}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setActivePlanId(activePlanId === 'plan_b' ? 'plan_a' : 'plan_b')}
+                  className="neu-btn px-4 py-2.5 rounded-2xl text-xs font-bold text-[var(--neu-accent)] flex items-center justify-center gap-2 active:neu-inset transition-all whitespace-nowrap"
+                  title="Switch itinerary plan with 1 tap"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Switch to {activePlanId === 'plan_b' ? 'Plan A (Assy Base)' : 'Plan B (Hot Springs)'}</span>
+                </button>
+              </div>
+            </div>
 
             {/* Horizontal Day Selector Bar */}
             <div ref={dayScrollRef} className="flex gap-3 overflow-x-auto scrollbar-none py-2 px-1 -mx-2">
@@ -1201,7 +1231,7 @@ export default function KazakhstanApp() {
               </p>
             </div>
             <div className="neu-inset rounded-[28px] p-2">
-              <MapTab isDarkMode={isDarkMode} />
+              <MapTab isDarkMode={isDarkMode} activePlan={activePlanId} />
             </div>
           </div>
         )}
@@ -1214,7 +1244,9 @@ export default function KazakhstanApp() {
                 <h2 className="text-lg sm:text-xl font-display font-extrabold flex items-center gap-2 text-[var(--neu-accent)]">
                   <Car className="w-5 h-5" /> 6-Person Transport Strategy & Calculator
                 </h2>
-                <p className="text-xs text-neu-muted mt-1">Compare vehicle configurations for Days 5–8 (3 rental days)</p>
+                <p className="text-xs text-neu-muted mt-1">
+                  Compare vehicle configurations for {activePlanId === 'plan_b' ? 'Days 2–7 (6 rental days)' : 'Days 5–8 (3 rental days)'}
+                </p>
               </div>
 
               <div className="space-y-3 pt-2">
@@ -1243,7 +1275,7 @@ export default function KazakhstanApp() {
                         )}
                       </div>
                       <div className="text-xs font-mono font-bold text-[var(--neu-amber)] mt-1">
-                        ~{opt.dailyRate.toLocaleString()} KZT/day • 3 days = {(opt.dailyRate * 3).toLocaleString()} KZT total
+                        ~{opt.dailyRate.toLocaleString()} KZT/day • {rentalDays} days = {(opt.dailyRate * rentalDays).toLocaleString()} KZT total
                       </div>
                       <div className="text-xs text-neu-muted mt-1">{opt.models}</div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 pt-2 text-xs">
@@ -1258,19 +1290,19 @@ export default function KazakhstanApp() {
               {/* Total Summary Inset Tile */}
               <div className="neu-inset p-5 rounded-[24px] flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-center sm:text-left">
                 <div>
-                  <div className="text-[10px] text-neu-muted uppercase font-bold tracking-wider">Total Rental Cost (3 Days)</div>
+                  <div className="text-[10px] text-neu-muted uppercase font-bold tracking-wider">Total Rental Cost ({rentalDays} Days)</div>
                   <div className="text-xl font-display font-extrabold text-[var(--neu-accent)]">
-                    ~{((strategyType === 'minivan' ? 75000 : strategyType === '2crossovers' ? 60000 : 100000) * 3).toLocaleString()} KZT
+                    ~{((strategyType === 'minivan' ? 75000 : strategyType === '2crossovers' ? 60000 : 100000) * rentalDays).toLocaleString()} KZT
                   </div>
                 </div>
                 <div className="w-full sm:w-px h-px sm:h-10 bg-neu-muted/20" />
                 <div>
                   <div className="text-[10px] text-neu-muted uppercase font-bold tracking-wider">Per Person Share (÷6)</div>
                   <div className="text-xl font-display font-extrabold text-[var(--neu-teal)]">
-                    ~{Math.round(((strategyType === 'minivan' ? 75000 : strategyType === '2crossovers' ? 60000 : 100000) * 3) / 6).toLocaleString()} KZT
+                    ~{Math.round(((strategyType === 'minivan' ? 75000 : strategyType === '2crossovers' ? 60000 : 100000) * rentalDays) / 6).toLocaleString()} KZT
                   </div>
                   <div className="text-[10px] text-neu-muted">
-                    (~{currSym}{Math.round((((strategyType === 'minivan' ? 75000 : strategyType === '2crossovers' ? 60000 : 100000) * 3) / 6) * currRate).toLocaleString()} {selectedCurrency})
+                    (~{currSym}{Math.round((((strategyType === 'minivan' ? 75000 : strategyType === '2crossovers' ? 60000 : 100000) * rentalDays) / 6) * currRate).toLocaleString()} {selectedCurrency})
                   </div>
                 </div>
               </div>
@@ -1294,7 +1326,7 @@ export default function KazakhstanApp() {
                   <Luggage className="w-4 h-4" /> 6-Person Luggage Strategy
                 </h3>
                 <ul className="text-xs text-neu-muted space-y-1.5 leading-relaxed pt-1">
-                  <li>• Store large hard suitcases at your Almaty hotel luggage room on Day 5 morning</li>
+                  <li>• {activePlanId === 'plan_b' ? 'Store main luggage at Almaty hotel or vehicle boot for Chundzha & Saty' : 'Store large hard suitcases at your Almaty hotel luggage room on Day 5 morning'}</li>
                   <li>• Travel with only 1 soft duffel bag per traveler to Saty & Basshi guesthouses</li>
                   <li>• Re-pack all souvenirs and main baggage in Almaty on Day 8 prior to airport transfer</li>
                 </ul>
@@ -1336,10 +1368,10 @@ export default function KazakhstanApp() {
             {/* Route Leg Matrix */}
             <div className="rounded-[32px] neu-flat p-6 sm:p-8 space-y-4">
               <h3 className="font-display font-bold text-base flex items-center gap-2 text-[var(--neu-teal)]">
-                <Compass className="w-4 h-4" /> Distance & Driving Time Matrix
+                <Compass className="w-4 h-4" /> Distance & Driving Time Matrix ({activePlanId === 'plan_b' ? 'Plan B: Thermal Springs Circuit' : 'Plan A: Classical Loop'})
               </h3>
               <div className="space-y-2.5 pt-1">
-                {ROUTE_LEGS.map((leg, idx) => (
+                {routeLegs.map((leg, idx) => (
                   <div key={idx} className="neu-flat-sm p-4 rounded-2xl flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-xs sm:text-sm font-bold truncate">

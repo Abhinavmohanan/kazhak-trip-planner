@@ -1,0 +1,506 @@
+[
+  {
+    "day": 1,
+    "date": "Sun, Oct 11",
+    "title": "Arrival & Almaty City Culture",
+    "overnight": "Almaty City Hotel (Base 1)",
+    "location": "Almaty City",
+    "activities": [
+      {
+        "time": "09:50 - 12:30",
+        "place": "Almaty Airport (ALA)",
+        "whatToDo": "Immigration, baggage claim, buy local Beeline/Tele2 SIM, order Yandex XL Taxi to hotel.",
+        "mustTry": "Local SIM card setup at arrivals",
+        "lookOutFor": "Allow 1-1.5 hrs; ignore aggressive unlicensed airport taxi drivers, use Yandex Go",
+        "kztExpense": 4000,
+        "category": "transit"
+      },
+      {
+        "time": "12:30 - 13:30",
+        "place": "Hotel (Almaty)",
+        "whatToDo": "Check-in & drop off luggage in room/storage.",
+        "mustTry": "Request early check-in if available",
+        "lookOutFor": "Keep passports handy for registration",
+        "kztExpense": 0,
+        "category": "hotel"
+      },
+      {
+        "time": "13:30 - 15:00",
+        "place": "Almaty City (Navat / Tandir)",
+        "whatToDo": "Authentic local kickoff lunch: traditional Lagman, Beshbarmak, or Shashlik.",
+        "mustTry": "Boshu Lagman (hand-pulled noodles) & Manti",
+        "lookOutFor": "Generous portions; use Yandex Go for reliable taxi rides",
+        "kztExpense": 5500,
+        "category": "food"
+      },
+      {
+        "time": "15:30 - 17:00",
+        "place": "Green Bazaar (Zelyony Bazar)",
+        "whatToDo": "Explore indoor market stalls, local spices, honey, dried fruits and cheeses.",
+        "mustTry": "Kurt (salted cheese balls), mountain honey, Kazy (horse meat)",
+        "lookOutFor": "Closes around 18:00 (closed on Mondays); cash preferred for stalls",
+        "kztExpense": 3000,
+        "category": "sightseeing"
+      },
+      {
+        "time": "17:30 - 18:30",
+        "place": "Panfilov Park & Zenkov Cathedral",
+        "whatToDo": "Walk park & explore Zenkov Cathedral built entirely of wood without metal nails.",
+        "mustTry": "Admire the wooden architecture & golden domes",
+        "lookOutFor": "Modest dress required inside cathedral (women cover heads, men remove hats)",
+        "kztExpense": 0,
+        "category": "sightseeing"
+      },
+      {
+        "time": "18:30 - 20:00",
+        "place": "Arbat (Zhibek Zholy)",
+        "whatToDo": "Stroll pedestrian street, browse street art, buskers, and open-air cafes.",
+        "mustTry": "Street art & artisan souvenir stalls",
+        "lookOutFor": "Great evening atmosphere; temperatures drop quickly after sunset",
+        "kztExpense": 1500,
+        "category": "sightseeing"
+      },
+      {
+        "time": "20:00 - 22:00",
+        "place": "City Center Dinner",
+        "whatToDo": "Dinner & drinks: local craft beer or Georgian cuisine (Khachapuri & Shashlik).",
+        "mustTry": "Georgian feast or craft brew at Harat's",
+        "lookOutFor": "Many popular city spots require weekend reservations",
+        "kztExpense": 6000,
+        "category": "food"
+      }
+    ]
+  },
+  {
+    "day": 2,
+    "date": "Mon, Oct 12",
+    "title": "Medeu, Shymbulak, Car Rental & Kok Tobe",
+    "overnight": "Almaty City Hotel (Base 1)",
+    "location": "Medeu & Almaty City",
+    "activities": [
+      {
+        "time": "09:00 - 10:00",
+        "place": "Almaty Dostyk Ave Cafe",
+        "whatToDo": "Local breakfast & specialty coffee; fuel up for high altitude.",
+        "mustTry": "Syrniki (cottage cheese pancakes) with berry jam",
+        "lookOutFor": "Top up Onay bus card or keep contactless bank card ready",
+        "kztExpense": 3000,
+        "category": "food"
+      },
+      {
+        "time": "10:00 - 11:30",
+        "place": "Medeu Speed Skating Rink",
+        "whatToDo": "High-altitude speed skating rink area. Take Bus No. 12 from Hotel Kazakhstan.",
+        "mustTry": "World's highest outdoor ice rink panorama",
+        "lookOutFor": "Dress warmly; significantly colder than city level",
+        "kztExpense": 200,
+        "category": "transit"
+      },
+      {
+        "time": "12:00 - 13:30",
+        "place": "Shymbulak Resort (Talgar Pass)",
+        "whatToDo": "Cable car ride up to Talgar Pass (3,200m) for panoramic snow mountain views.",
+        "mustTry": "Snow-capped Tien Shan peaks & glacier air",
+        "lookOutFor": "Cable cars run until Oct 18. Expect snow & freezing winds at top",
+        "kztExpense": 13000,
+        "category": "sightseeing"
+      },
+      {
+        "time": "13:30 - 15:00",
+        "place": "Shymbulak Resort Chalet",
+        "whatToDo": "Lunch with a mountain view at 3,200m chalet dining.",
+        "mustTry": "Hot mountain herbal tea & grilled meats",
+        "lookOutFor": "Food is pricier at the resort; stay warm",
+        "kztExpense": 9000,
+        "category": "food"
+      },
+      {
+        "time": "15:30 - 17:00",
+        "place": "Almaty City — Rental Car Pickup",
+        "whatToDo": "Return to city and pick up 6-day rental minivan/crossover (Vladex or similar).",
+        "mustTry": "Thorough vehicle inspection, jack & spare tire check",
+        "lookOutFor": "CRITICAL: Visually inspect tires — MUST be winter tires (studded/friction) for Oct mountains",
+        "kztExpense": 12000,
+        "category": "transit"
+      },
+      {
+        "time": "17:00 - 19:30",
+        "place": "Kok Tobe Hilltop",
+        "whatToDo": "Aerial cable car from Dostyk Ave to Kok Tobe for sunset golden hour over Almaty.",
+        "mustTry": "Almaty TV Tower view & sunset over Tien Shan range",
+        "lookOutFor": "Cable car tickets ~2,500 KZT roundtrip; dress in layers",
+        "kztExpense": 2500,
+        "category": "sightseeing"
+      },
+      {
+        "time": "19:30 - 21:00",
+        "place": "Supermarket (Magnum / Galmart)",
+        "whatToDo": "Shop road trip groceries: 5L drinking water jugs, dry snacks, nuts, toilet paper.",
+        "mustTry": "Kazakh chocolate, dried fruit bars, wet wipes",
+        "lookOutFor": "Stock up thoroughly; remote village shops have limited supplies",
+        "kztExpense": 5000,
+        "category": "sightseeing"
+      },
+      {
+        "time": "21:00 - 22:30",
+        "place": "City Center Dinner",
+        "whatToDo": "Hearty city dinner and rest up before early morning road trip start.",
+        "mustTry": "Navat or Parmigiano dinner",
+        "lookOutFor": "Ensure phones/powerbanks are 100% charged overnight",
+        "kztExpense": 5500,
+        "category": "food"
+      }
+    ]
+  },
+  {
+    "day": 3,
+    "date": "Tue, Oct 13",
+    "title": "Issyk Lake, Turgen Gorge & Chundzha Hot Springs",
+    "overnight": "Chundzha Hot Springs Resort (Base 2)",
+    "location": "Issyk, Turgen & Chundzha",
+    "activities": [
+      {
+        "time": "07:00 - 08:30",
+        "place": "Almaty Hotel",
+        "whatToDo": "Breakfast, hotel check-out & vehicle winter check. Check spare tire, fuel up to 100%.",
+        "mustTry": "Test car heating system & wiper fluid before leaving city",
+        "lookOutFor": "Fuel up at Compass or Qazaq Oil station",
+        "kztExpense": 15000,
+        "category": "transit"
+      },
+      {
+        "time": "08:30 - 10:00",
+        "place": "Journey East",
+        "whatToDo": "Drive ~80 km east towards Issyk Lake along the scenic mountain highway.",
+        "mustTry": "Scenic morning foothills of Zailiyskiy Alatau",
+        "lookOutFor": "Obey speed limits strictly (50-60 km/h in villages); traffic police radar is active",
+        "kztExpense": 0,
+        "category": "transit"
+      },
+      {
+        "time": "10:00 - 12:30",
+        "place": "Issyk Lake (Ozero Isik)",
+        "whatToDo": "Explore alpine lake, photography, and walk along the turquoise waters.",
+        "mustTry": "Turquoise lake reflection against golden autumn slopes",
+        "lookOutFor": "Extremely strong cold winds off the water; wear thermals, windbreaker & gloves",
+        "kztExpense": 500,
+        "category": "sightseeing"
+      },
+      {
+        "time": "13:00 - 16:00",
+        "place": "Turgen Gorge & Bear Waterfall",
+        "whatToDo": "Drive into Turgen river gorge, enjoy lunch and hike to Bear Waterfall (Medvezhiy).",
+        "mustTry": "Hike to 30m waterfall & fresh mountain trout lunch",
+        "lookOutFor": "Trail may be muddy, slippery, or icy in October; wear sturdy boots",
+        "kztExpense": 4000,
+        "category": "sightseeing"
+      },
+      {
+        "time": "16:30 - 19:00",
+        "place": "Chundzha Hot Springs (Transit)",
+        "whatToDo": "Drive east along Kulja tract to Chundzha thermal springs area. Check-in to resort.",
+        "mustTry": "Arrive before dark; heated indoor/outdoor mineral pools",
+        "lookOutFor": "Temps drop fast; safe thermal resort stay replaces dangerous cold camping",
+        "kztExpense": 14000,
+        "category": "hotel"
+      },
+      {
+        "time": "19:00 - 22:00",
+        "place": "Thermal Mineral Springs & Dinner",
+        "whatToDo": "Night soak in naturally heated thermal mineral pools (38°C–44°C) under starlit sky & dinner.",
+        "mustTry": "Mineral water thermal soak in crisp October evening air",
+        "lookOutFor": "Bring swimwear & slippers; great recovery for muscles",
+        "kztExpense": 6000,
+        "category": "sightseeing"
+      }
+    ]
+  },
+  {
+    "day": 4,
+    "date": "Wed, Oct 14",
+    "title": "Chundzha → Charyn Canyon → Saty Village",
+    "overnight": "Saty Village Guesthouse (Base 3)",
+    "location": "Charyn Canyon & Saty",
+    "activities": [
+      {
+        "time": "08:30 - 09:30",
+        "place": "Chundzha Guesthouse",
+        "whatToDo": "Breakfast & checkout. Hot tea and local breads.",
+        "mustTry": "Fresh village cream, bread and honey",
+        "lookOutFor": "Ensure car windows are fully defrosted before driving",
+        "kztExpense": 0,
+        "category": "food"
+      },
+      {
+        "time": "09:30 - 11:30",
+        "place": "Journey to Charyn Canyon",
+        "whatToDo": "Drive south-west towards Charyn Canyon across wide autumn steppe landscape.",
+        "mustTry": "Changing semi-desert steppe scenery",
+        "lookOutFor": "Watch out for morning black ice in shaded valley dips",
+        "kztExpense": 2000,
+        "category": "transit"
+      },
+      {
+        "time": "11:30 - 15:00",
+        "place": "Charyn Canyon (Valley of Castles)",
+        "whatToDo": "Hike 2.5 km down dramatic red sandstone canyon to the rushing Charyn River & picnic.",
+        "mustTry": "Spectacular red rock towers; eco-bus ride back if tired",
+        "lookOutFor": "October climate is ideal (cool & crisp); carry at least 1.5L water per person",
+        "kztExpense": 1000,
+        "category": "sightseeing"
+      },
+      {
+        "time": "15:30 - 16:30",
+        "place": "Black Canyon Overlook",
+        "whatToDo": "Photo stop along main highway to view the deep, dark volcanic river gorge.",
+        "mustTry": "Sheer 100m vertical canyon drop and rushing river view",
+        "lookOutFor": "15-20 min stop right by main road to Saty; strong winds at edge",
+        "kztExpense": 0,
+        "category": "sightseeing"
+      },
+      {
+        "time": "17:30 - 21:00",
+        "place": "Saty Village Guesthouse",
+        "whatToDo": "Arrive in Saty village, check into welcoming family guesthouse, enjoy homemade Kazakh dinner.",
+        "mustTry": "Baursak, homemade Kuurdak/Beshbarmak, fresh herbal mountain tea",
+        "lookOutFor": "Cash-only payments in village; ask host for extra thick blankets for freezing night",
+        "kztExpense": 8000,
+        "category": "hotel"
+      }
+    ]
+  },
+  {
+    "day": 5,
+    "date": "Thu, Oct 15",
+    "title": "Submerged Forest (Kaindy) & Kolsai Lakes",
+    "overnight": "Saty Village Guesthouse (Base 3)",
+    "location": "Lake Kaindy & Kolsai",
+    "activities": [
+      {
+        "time": "08:00 - 09:00",
+        "place": "Saty Guesthouse",
+        "whatToDo": "Hearty guesthouse breakfast with farm eggs, local jams, and hot tea.",
+        "mustTry": "Hot homemade breakfast before cold mountain trek",
+        "lookOutFor": "Eat well; you need energy for the crisp outdoor cold",
+        "kztExpense": 0,
+        "category": "food"
+      },
+      {
+        "time": "09:00 - 13:30",
+        "place": "Lake Kaindy (Sunken Forest)",
+        "whatToDo": "Hire local Soviet UAZ Bukhanka 4x4 van from Saty. Hike/horseback to submerged birch tree trunks.",
+        "mustTry": "Eerie spruce tree trunks preserved in turquoise mountain lake",
+        "lookOutFor": "Do NOT drive rental car here (rough riverbed breaks cars). Trail can be snowy/slippery",
+        "kztExpense": 5000,
+        "category": "sightseeing"
+      },
+      {
+        "time": "13:30 - 15:00",
+        "place": "Saty Village Lunch",
+        "whatToDo": "Return to guesthouse for hot soup (Shurpa or Borscht) and tea.",
+        "mustTry": "Hot mountain broth to warm up after Kaindy",
+        "lookOutFor": "Rest up before afternoon lake trip",
+        "kztExpense": 3000,
+        "category": "food"
+      },
+      {
+        "time": "15:30 - 18:30",
+        "place": "Lower Kolsai Lake",
+        "whatToDo": "Drive 20 mins on smooth asphalt road to Lower Kolsai. Lakeshore walk and rowboat.",
+        "mustTry": "Wooden rowboat cruise or stroll along alpine shoreline",
+        "lookOutFor": "Paved road from Saty; stunning autumn golden larch trees or early snow dust",
+        "kztExpense": 4000,
+        "category": "sightseeing"
+      },
+      {
+        "time": "19:30 - 21:30",
+        "place": "Saty Village Stargazing & Dinner",
+        "whatToDo": "Homemade dinner by host and unpolluted mountain stargazing.",
+        "mustTry": "Milky way views in pitch-black mountain village sky",
+        "lookOutFor": "Temperatures drop well below freezing (-5°C to -10°C); bundle up!",
+        "kztExpense": 0,
+        "category": "hotel"
+      }
+    ]
+  },
+  {
+    "day": 6,
+    "date": "Fri, Oct 16",
+    "title": "Saty → Altyn Emel (Basshi) & Singing Dunes",
+    "overnight": "Basshi Village Guesthouse (Base 4)",
+    "location": "Altyn Emel National Park",
+    "activities": [
+      {
+        "time": "07:00 - 07:30",
+        "place": "Saty Village Guesthouse",
+        "whatToDo": "Early breakfast & checkout. Fill thermoses with hot tea.",
+        "mustTry": "Hot tea for the road",
+        "lookOutFor": "Scrape morning ice off windshield before departure",
+        "kztExpense": 0,
+        "category": "food"
+      },
+      {
+        "time": "07:30 - 12:30",
+        "place": "Journey to Altyn Emel",
+        "whatToDo": "4.5 to 5-hour drive to Basshi village via Chilik corridor and Kokpek pass.",
+        "mustTry": "Dramatic transition from snow alpine peaks to golden desert steppe",
+        "lookOutFor": "Keep tank topped up; long stretches without services",
+        "kztExpense": 5000,
+        "category": "transit"
+      },
+      {
+        "time": "12:30 - 13:30",
+        "place": "Basshi Village Office",
+        "whatToDo": "Register vehicle and pay entrance permits at Altyn Emel National Park headquarters; check-in.",
+        "mustTry": "Local village lunch and national park registration",
+        "lookOutFor": "Mandatory: Keep park permit receipt displayed on car dashboard",
+        "kztExpense": 2000,
+        "category": "transit"
+      },
+      {
+        "time": "14:00 - 17:30",
+        "place": "Singing Dunes (Altyn Emel)",
+        "whatToDo": "Drive 45 km gravel track to Singing Dunes. Climb dune ridge and slide down to hear acoustic vibration.",
+        "mustTry": "Loud organ-like humming produced by vibrating dry sand",
+        "lookOutFor": "Cap speed at 40 km/h on washboard gravel; deflate tires slightly for comfort",
+        "kztExpense": 1000,
+        "category": "sightseeing"
+      },
+      {
+        "time": "18:00 - 21:00",
+        "place": "Basshi Village Guesthouse",
+        "whatToDo": "Return to guesthouse for dinner and rest after the dune climb.",
+        "mustTry": "Homestyle Kazakh hospitality in remote steppe village",
+        "lookOutFor": "Staying in Basshi eliminates a brutal 12-hour nighttime driving marathon to Almaty",
+        "kztExpense": 8000,
+        "category": "hotel"
+      }
+    ]
+  },
+  {
+    "day": 7,
+    "date": "Sat, Oct 17",
+    "title": "Aktau Mountains → Almaty & Arasan Baths",
+    "overnight": "Almaty City Hotel (Base 1)",
+    "location": "Aktau Mountains & Almaty",
+    "activities": [
+      {
+        "time": "06:30 - 07:00",
+        "place": "Basshi Village",
+        "whatToDo": "Early breakfast and checkout to maximize daylight.",
+        "mustTry": "Warm breakfast & coffee",
+        "lookOutFor": "Ensure full water supply and check tire pressures for desert trip",
+        "kztExpense": 0,
+        "category": "food"
+      },
+      {
+        "time": "07:00 - 10:30",
+        "place": "Aktau Chalk Mountains",
+        "whatToDo": "Drive inside park to the alien-like white, red, and banded chalk mountains.",
+        "mustTry": "Hike through Martian layered sedimentary canyons",
+        "lookOutFor": "90 km washboard track takes 1.5-2 hrs each way; extremely bumpy gravel",
+        "kztExpense": 1000,
+        "category": "sightseeing"
+      },
+      {
+        "time": "11:00 - 12:30",
+        "place": "Return to Highway",
+        "whatToDo": "Drive back through Basshi village towards the main highway.",
+        "mustTry": "Steppe views & wild Kulan (wild ass) or Goitered Gazelle sightings",
+        "lookOutFor": "Re-inflate tires at roadside compressor if you deflated them",
+        "kztExpense": 2000,
+        "category": "transit"
+      },
+      {
+        "time": "12:30 - 17:00",
+        "place": "Journey to Almaty",
+        "whatToDo": "4-hour highway drive back to Almaty via Kapchagay (Qonaev) lake stop for lunch.",
+        "mustTry": "Fresh lake fish lunch near Kapchagay reservoir",
+        "lookOutFor": "Smooth multi-lane A3 tollway into Almaty",
+        "kztExpense": 5000,
+        "category": "transit"
+      },
+      {
+        "time": "17:00 - 18:30",
+        "place": "Almaty City — Car Return",
+        "whatToDo": "Return rental car (clean interior, full fuel tank) and check in to Almaty hotel.",
+        "mustTry": "Retrieve stored luggage from hotel storage",
+        "lookOutFor": "Thorough vehicle check for road trip scratches/dust",
+        "kztExpense": 0,
+        "category": "transit"
+      },
+      {
+        "time": "18:30 - 20:30",
+        "place": "Arasan Bathhouse Recovery",
+        "whatToDo": "Historic Soviet/Kazakh public bathhouse recovery session & sauna massage.",
+        "mustTry": "Venik (oak leaf bundle) sauna steam massage & cold plunge",
+        "lookOutFor": "Gender-segregated; incredible way to soothe muscles after road trip",
+        "kztExpense": 4500,
+        "category": "sightseeing"
+      },
+      {
+        "time": "21:00 - 23:00",
+        "place": "Almaty City Celebration Dinner",
+        "whatToDo": "Celebratory road trip completion dinner with craft drinks & local music.",
+        "mustTry": "Traditional Kazakh feast at Navat, Kishlak or Gosti",
+        "lookOutFor": "Celebrate successful 6-day road expedition!",
+        "kztExpense": 8000,
+        "category": "food"
+      }
+    ]
+  },
+  {
+    "day": 8,
+    "date": "Sun, Oct 18",
+    "title": "Big Almaty Lake (BAO), Souvenirs & Airport",
+    "overnight": "Flight Departure",
+    "location": "Big Almaty Lake & Almaty Airport",
+    "activities": [
+      {
+        "time": "08:30 - 13:00",
+        "place": "Big Almaty Lake (BAO)",
+        "whatToDo": "Scenic morning excursion to Big Almaty Lake via authorized eco-shuttle.",
+        "mustTry": "Turquoise alpine reservoir surrounded by snowy Tien Shan peaks",
+        "lookOutFor": "Private cars banned. Must carry original passports for border control zone",
+        "kztExpense": 12000,
+        "category": "sightseeing"
+      },
+      {
+        "time": "13:30 - 15:00",
+        "place": "Almaty City Pedestrian Lunch",
+        "whatToDo": "Lunch along Dostyk Avenue / Panfilov Street; relaxed cafe culture.",
+        "mustTry": "Central Asian baked pastries, tea and craft coffee",
+        "lookOutFor": "Relaxed urban vibe before flight packing",
+        "kztExpense": 4000,
+        "category": "food"
+      },
+      {
+        "time": "15:30 - 17:00",
+        "place": "Rakhat Chocolate Factory Store",
+        "whatToDo": "Souvenir and chocolate shopping at official factory store on Zenkov Street.",
+        "mustTry": "Signature blue-wrapped 'Kazakhstan' chocolate bars & tins",
+        "lookOutFor": "Factory store offers freshest stock and best wholesale prices",
+        "kztExpense": 5000,
+        "category": "sightseeing"
+      },
+      {
+        "time": "17:30 - 19:30",
+        "place": "Hotel Luggage & Airport Transfer",
+        "whatToDo": "Pick up stored luggage, repack all souvenirs, and call Yandex XL Taxi to ALA airport.",
+        "mustTry": "Check baggage weight and pack chocolates in carry-on",
+        "lookOutFor": "Allow 45-60 mins for airport transit; Sunday evening traffic can peak",
+        "kztExpense": 3500,
+        "category": "transit"
+      },
+      {
+        "time": "19:30 - 22:30",
+        "place": "Almaty Airport (ALA)",
+        "whatToDo": "Airport check-in 3 hours prior to international departure, security and duty-free.",
+        "mustTry": "Final airport duty-free & boarding",
+        "lookOutFor": "Safe flight home to India with incredible memories of Kazakhstan!",
+        "kztExpense": 0,
+        "category": "transit"
+      }
+    ]
+  }
+]
